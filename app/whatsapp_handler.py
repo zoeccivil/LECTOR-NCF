@@ -16,17 +16,27 @@ class WhatsAppHandler:
         try:
             if settings.twilio_account_sid and settings.twilio_auth_token:
                 self.client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
-                app_logger.info("Twilio WhatsApp client initialized")
+                
+                # Asegurar que el número de origen tenga el prefijo whatsapp:
+                raw_number = settings.twilio_whatsapp_number
+                if raw_number and not raw_number.startswith('whatsapp:'):
+                    self.from_number = f"whatsapp:{raw_number}"
+                else:
+                    self.from_number = raw_number
+                    
+                app_logger.info(f"Twilio WhatsApp client initialized. Sender: {self.from_number}")
             else:
                 self.client = None
+                self.from_number = None
                 app_logger.warning("Twilio credentials not configured")
         except Exception as e:
             app_logger.error(f"Failed to initialize Twilio client: {e}")
             self.client = None
+            self.from_number = None
     
     async def download_media(self, media_url: str, auth_token: Optional[str] = None) -> Optional[bytes]:
         """
-        Download media from Twilio URL
+        Download media from Twilio URL handling redirects (Fix for 307 error)
         
         Args:
             media_url: URL of the media file
@@ -38,18 +48,25 @@ class WhatsAppHandler:
         try:
             app_logger.info(f"Downloading media from: {media_url}")
             
-            # Use auth if provided
+            # Use auth if provided, otherwise check settings
             auth = None
+            if not auth_token and settings.twilio_auth_token:
+                auth_token = settings.twilio_auth_token
+                
             if settings.twilio_account_sid and auth_token:
                 auth = (settings.twilio_account_sid, auth_token)
             
-            async with httpx.AsyncClient() as client:
+            # IMPORTANTE: follow_redirects=True es necesario para las URLs de medios de Twilio
+            async with httpx.AsyncClient(follow_redirects=True) as client:
                 response = await client.get(media_url, auth=auth, timeout=30.0)
-                response.raise_for_status()
                 
-                content = response.content
-                app_logger.info(f"Downloaded {len(content)} bytes")
-                return content
+                if response.status_code == 200:
+                    content = response.content
+                    app_logger.info(f"Downloaded {len(content)} bytes successfully")
+                    return content
+                else:
+                    app_logger.error(f"Failed to download media. Status: {response.status_code}")
+                    return None
                 
         except Exception as e:
             app_logger.error(f"Error downloading media: {e}")
@@ -66,19 +83,19 @@ class WhatsAppHandler:
         Returns:
             True if sent successfully, False otherwise
         """
-        if not self.client:
-            app_logger.error("Twilio client not initialized")
+        if not self.client or not self.from_number:
+            app_logger.error("Twilio client not initialized or sender number missing")
             return False
         
         try:
-            # Ensure number has whatsapp: prefix
+            # Ensure TO number has whatsapp: prefix
             if not to_number.startswith('whatsapp:'):
                 to_number = f'whatsapp:{to_number}'
             
-            app_logger.info(f"Sending WhatsApp message to {to_number}")
+            app_logger.info(f"Sending WhatsApp message to {to_number} from {self.from_number}")
             
             message_obj = self.client.messages.create(
-                from_=settings.twilio_whatsapp_number,
+                from_=self.from_number,
                 to=to_number,
                 body=message
             )
@@ -93,45 +110,24 @@ class WhatsAppHandler:
     def send_confirmation(self, to_number: str) -> bool:
         """
         Send confirmation message that invoice is being processed
-        
-        Args:
-            to_number: Recipient's WhatsApp number
-            
-        Returns:
-            True if sent successfully
         """
-        message = "✅ Factura recibida, procesando..."
+        message = "✅ Factura recibida, procesando... ⏳"
         return self.send_message(to_number, message)
     
     def send_success(self, to_number: str, ncf: str, total: Optional[float] = None) -> bool:
         """
         Send success message with invoice details
-        
-        Args:
-            to_number: Recipient's WhatsApp number
-            ncf: NCF number
-            total: Total amount
-            
-        Returns:
-            True if sent successfully
         """
-        if total:
-            message = f"✅ Factura NCF: {ncf} - Monto: RD${total:,.2f} - Procesada correctamente"
+        if total is not None:
+            message = f"🧾 *Lectura Exitosa*\n\n✅ **NCF:** {ncf}\n💰 **Total:** RD${total:,.2f}"
         else:
-            message = f"✅ Factura NCF: {ncf} - Procesada correctamente"
+            message = f"🧾 *Lectura Exitosa*\n\n✅ **NCF:** {ncf}"
         
         return self.send_message(to_number, message)
     
     def send_error(self, to_number: str, error_detail: Optional[str] = None) -> bool:
         """
         Send error message
-        
-        Args:
-            to_number: Recipient's WhatsApp number
-            error_detail: Optional error detail
-            
-        Returns:
-            True if sent successfully
         """
         message = "❌ No se pudo leer la factura. Por favor, envía una foto más clara."
         if error_detail:
@@ -142,18 +138,11 @@ class WhatsAppHandler:
     def send_partial_success(self, to_number: str, warnings: list) -> bool:
         """
         Send partial success message with warnings
-        
-        Args:
-            to_number: Recipient's WhatsApp number
-            warnings: List of warning messages
-            
-        Returns:
-            True if sent successfully
         """
-        message = "⚠️ Factura procesada parcialmente.\n\n"
-        message += "Algunos datos no pudieron ser extraídos:\n"
+        message = "⚠️ *Factura procesada con alertas*\n\n"
         for warning in warnings:
             message += f"• {warning}\n"
+        message += "\nRevisar manualmente."
         
         return self.send_message(to_number, message)
 
