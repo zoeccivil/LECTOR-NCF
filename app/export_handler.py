@@ -5,7 +5,7 @@ import json
 import csv
 from pathlib import Path
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from app.models import Invoice
 from app.utils.logger import app_logger
 from app.utils.config import settings
