@@ -4,7 +4,7 @@ Exporter screen - Export wizard for facturas
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QComboBox, QTableWidget, QTableWidgetItem,
                              QCheckBox, QRadioButton, QButtonGroup, QGroupBox,
-                             QMessageBox, QFileDialog, QFrame)
+                             QMessageBox, QFileDialog, QFrame, QLineEdit)
 from PyQt6.QtCore import pyqtSignal, Qt
 import sys
 import os
@@ -417,7 +417,3 @@ class ExporterScreen(QWidget):
     def _on_error(self, error_msg: str):
         """Handle error"""
         QMessageBox.critical(self, "Error", f"Error: {error_msg}")
-
-
-# Import QLineEdit which was missing
-from PyQt6.QtWidgets import QLineEdit

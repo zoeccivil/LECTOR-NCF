@@ -187,10 +187,10 @@ class FacturaTable(QTableWidget):
             # Action buttons
             actions = ActionButtons()
             actions.edit_clicked.connect(
-                lambda checked=False, r=row: self._on_edit_clicked(r)
+                lambda _, r=row: self._on_edit_clicked(r)
             )
             actions.delete_clicked.connect(
-                lambda checked=False, r=row: self._on_delete_clicked(r)
+                lambda _, r=row: self._on_delete_clicked(r)
             )
             self.setCellWidget(row, 6, actions)
     
