@@ -109,17 +109,23 @@ def extract_rnc_from_text(text: str) -> Optional[str]:
     if not text:
         return None
     
-    # Look for 9 or 11 digit sequences
-    # May have dashes or spaces
-    pattern = r'\b\d{3}[-\s]?\d{3}[-\s]?\d{3}[-\s]?\d{2}?\b|\b\d{9}\b|\b\d{11}\b'
+    # Look for 9 or 11 digit sequences with optional dashes/spaces
+    # Pattern for 9 digits: 123-456-789 or 123456789
+    # Pattern for 11 digits: 123-456-789-01 or 12345678901
+    patterns = [
+        r'\b\d{3}[-\s]\d{3}[-\s]\d{3}\b',           # 123-456-789
+        r'\b\d{3}[-\s]\d{3}[-\s]\d{3}[-\s]\d{2}\b', # 123-456-789-01
+        r'\b\d{9}\b',                                 # 123456789
+        r'\b\d{11}\b'                                 # 12345678901
+    ]
     
-    matches = re.findall(pattern, text)
-    
-    for match in matches:
-        # Remove spaces and dashes
-        rnc = re.sub(r'[-\s]', '', match)
-        if validate_rnc(rnc):
-            return rnc
+    for pattern in patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            # Remove spaces and dashes
+            rnc = re.sub(r'[-\s]', '', match)
+            if validate_rnc(rnc):
+                return rnc
     
     return None
 

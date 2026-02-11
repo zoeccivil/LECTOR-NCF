@@ -191,10 +191,22 @@ class NCFParser:
         
         for keyword in keywords:
             for i, line_lower in enumerate(lines_lower):
+                # Use word boundary to match exact keywords and avoid partial matches
+                # e.g., "total" should not match "subtotal"
                 if keyword in line_lower:
-                    # Check current line and next 2 lines
-                    for j in range(max(0, i-1), min(len(lines), i+3)):
-                        amount = self._extract_first_amount(lines[j])
+                    # Check if it's a word boundary match (not part of another word)
+                    # For "total", ensure it's not "subtotal"
+                    if keyword == 'total' and 'subtotal' in line_lower:
+                        continue
+                    
+                    # First, try to find amount on the same line
+                    amount = self._extract_first_amount(lines[i])
+                    if amount and amount > 0:
+                        return amount
+                    
+                    # If not found, check next line
+                    if i + 1 < len(lines):
+                        amount = self._extract_first_amount(lines[i + 1])
                         if amount and amount > 0:
                             return amount
         
@@ -205,8 +217,8 @@ class NCFParser:
         # Remove currency symbols
         text = re.sub(r'RD\$|DOP|\$', '', text)
         
-        # Try pattern: 1,234.56 (US format)
-        match = re.search(r'(\d{1,3}(?:,\d{3})*\.\d{2})', text)
+        # Try pattern: 1,234.56 (US format) - at least 2 decimal places
+        match = re.search(r'(\d{1,3}(?:,\d{3})+\.\d{2})', text)
         if match:
             amount_str = match.group(1).replace(',', '')
             try:
@@ -214,22 +226,23 @@ class NCFParser:
             except:
                 pass
         
+        # Try pattern: 1234.56 (simple US format with decimals)
+        match = re.search(r'\b(\d+\.\d{2})\b', text)
+        if match:
+            try:
+                amount = float(match.group(1))
+                # Only return if it looks like a reasonable amount (not part of an ID)
+                if amount > 0 and amount < 1000000:
+                    return amount
+            except:
+                pass
+        
         # Try pattern: 1.234,56 (European format)
-        match = re.search(r'(\d{1,3}(?:\.\d{3})*,\d{2})', text)
+        match = re.search(r'(\d{1,3}(?:\.\d{3})+,\d{2})', text)
         if match:
             amount_str = match.group(1).replace('.', '').replace(',', '.')
             try:
                 return float(amount_str)
-            except:
-                pass
-        
-        # Try simple number
-        match = re.search(r'(\d+\.?\d*)', text)
-        if match:
-            try:
-                amount = float(match.group(1))
-                if amount > 0:
-                    return amount
             except:
                 pass
         

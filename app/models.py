@@ -26,7 +26,7 @@ class InvoiceMetadata(BaseModel):
 class Invoice(BaseModel):
     """Complete invoice data model"""
     id: str = Field(default_factory=lambda: str(uuid4()), description="Unique invoice ID")
-    fecha_procesamiento: datetime = Field(default_factory=datetime.utcnow, description="Processing timestamp")
+    fecha_procesamiento: datetime = Field(default_factory=lambda: datetime.now(), description="Processing timestamp")
     ncf: Optional[str] = Field(None, description="Número de Comprobante Fiscal")
     rnc: Optional[str] = Field(None, description="Registro Nacional del Contribuyente")
     razon_social: Optional[str] = Field(None, description="Business name")
