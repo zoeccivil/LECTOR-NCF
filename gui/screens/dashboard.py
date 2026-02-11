@@ -140,10 +140,9 @@ class DashboardScreen(QWidget):
         """Load facturas for selected empresa"""
         self.current_empresa_id = empresa_id
         self.worker_pool.execute(
-            firebase_handler.get_facturas_by_empresa,
+            lambda: firebase_handler.get_facturas_by_empresa(empresa_id),
             on_success=self._on_facturas_loaded,
-            on_error=self._on_error,
-            empresa_id
+            on_error=self._on_error
         )
     
     def _on_facturas_loaded(self, facturas: list):
@@ -187,11 +186,9 @@ class DashboardScreen(QWidget):
         
         if reply == QMessageBox.StandardButton.Yes:
             self.worker_pool.execute(
-                firebase_handler.delete_factura,
+                lambda: firebase_handler.delete_factura(empresa_id, factura_id),
                 on_success=lambda success: self._on_delete_complete(success),
-                on_error=self._on_error,
-                empresa_id,
-                factura_id
+                on_error=self._on_error
             )
     
     def _on_delete_complete(self, success: bool):

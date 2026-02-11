@@ -4,9 +4,9 @@ Editor screen - Factura editor with image viewer and form
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
                              QPushButton, QLabel, QLineEdit, QDoubleSpinBox,
                              QDateEdit, QScrollArea, QCheckBox, QMessageBox,
-                             QGroupBox, QFrame, QShortcut)
+                             QGroupBox, QFrame)
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtCore import pyqtSignal, Qt, QDate
-from PyQt6.QtGui import QKeySequence
 import sys
 import os
 
@@ -240,19 +240,16 @@ class EditorScreen(QWidget):
         
         # Load factura
         self.worker_pool.execute(
-            firebase_handler.get_factura,
+            lambda: firebase_handler.get_factura(empresa_id, factura_id),
             on_success=self._on_factura_loaded,
-            on_error=self._on_error,
-            empresa_id,
-            factura_id
+            on_error=self._on_error
         )
         
         # Load all facturas for navigation
         self.worker_pool.execute(
-            firebase_handler.get_facturas_by_empresa,
+            lambda: firebase_handler.get_facturas_by_empresa(empresa_id),
             on_success=self._on_facturas_list_loaded,
-            on_error=self._on_error,
-            empresa_id
+            on_error=self._on_error
         )
     
     def _on_factura_loaded(self, factura: dict):
@@ -377,12 +374,9 @@ class EditorScreen(QWidget):
         
         # Save to Firebase
         self.worker_pool.execute(
-            firebase_handler.update_factura,
+            lambda: firebase_handler.update_factura(self.current_empresa_id, self.current_factura_id, updates),
             on_success=lambda success: self._on_save_complete(success),
-            on_error=self._on_error,
-            self.current_empresa_id,
-            self.current_factura_id,
-            updates
+            on_error=self._on_error
         )
     
     def _mark_reviewed(self):
@@ -395,11 +389,9 @@ class EditorScreen(QWidget):
         
         # Then mark as reviewed
         self.worker_pool.execute(
-            firebase_handler.mark_factura_revisada,
+            lambda: firebase_handler.mark_factura_revisada(self.current_empresa_id, self.current_factura_id),
             on_success=lambda success: self._on_review_complete(success),
-            on_error=self._on_error,
-            self.current_empresa_id,
-            self.current_factura_id
+            on_error=self._on_error
         )
     
     def _delete_factura(self):
@@ -415,11 +407,9 @@ class EditorScreen(QWidget):
         
         if reply == QMessageBox.StandardButton.Yes:
             self.worker_pool.execute(
-                firebase_handler.delete_factura,
+                lambda: firebase_handler.delete_factura(self.current_empresa_id, self.current_factura_id),
                 on_success=lambda success: self._on_delete_complete(success),
-                on_error=self._on_error,
-                self.current_empresa_id,
-                self.current_factura_id
+                on_error=self._on_error
             )
     
     def _on_save_complete(self, success: bool):

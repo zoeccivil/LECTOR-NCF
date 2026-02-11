@@ -232,10 +232,9 @@ class ExporterScreen(QWidget):
         """Load facturas ready for export"""
         self.current_empresa_id = empresa_id
         self.worker_pool.execute(
-            firebase_handler.get_facturas_para_exportar,
+            lambda: firebase_handler.get_facturas_para_exportar(empresa_id),
             on_success=self._on_facturas_loaded,
-            on_error=self._on_error,
-            empresa_id
+            on_error=self._on_error
         )
     
     def _on_facturas_loaded(self, facturas: list):
