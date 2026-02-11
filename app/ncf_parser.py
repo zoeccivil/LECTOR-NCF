@@ -185,20 +185,16 @@ class NCFParser:
         return amounts
     
     def _find_amount_near_keyword(self, text: str, text_lower: str, keywords: list) -> Optional[float]:
-        """Find amount near specific keywords"""
+        """Find amount near specific keywords using word boundary matching"""
         lines = text.split('\n')
         lines_lower = text_lower.split('\n')
         
         for keyword in keywords:
             for i, line_lower in enumerate(lines_lower):
-                # Use word boundary to match exact keywords and avoid partial matches
-                # e.g., "total" should not match "subtotal"
-                if keyword in line_lower:
-                    # Check if it's a word boundary match (not part of another word)
-                    # For "total", ensure it's not "subtotal"
-                    if keyword == 'total' and 'subtotal' in line_lower:
-                        continue
-                    
+                # Use word boundaries to ensure exact keyword match
+                # This prevents 'total' from matching 'subtotal'
+                pattern = r'\b' + re.escape(keyword) + r'\b'
+                if re.search(pattern, line_lower):
                     # First, try to find amount on the same line
                     amount = self._extract_first_amount(lines[i])
                     if amount and amount > 0:

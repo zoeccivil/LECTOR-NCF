@@ -4,7 +4,7 @@ Main FastAPI application with WhatsApp webhook endpoint
 from fastapi import FastAPI, Form, Request, HTTPException
 from fastapi.responses import Response
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import os
 
@@ -60,7 +60,7 @@ async def health():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": {
             "ocr": ocr_processor.client is not None,
             "whatsapp": whatsapp_handler.client is not None

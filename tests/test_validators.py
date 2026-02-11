@@ -48,7 +48,7 @@ class TestNCFValidation:
         """Test that NCF validation is case insensitive"""
         assert validate_ncf("b0100000001")
         assert validate_ncf("B0100000001")
-        assert validate_ncf("b0100000001")
+        assert validate_ncf("B0100000001".upper())
     
     def test_ncf_with_spaces(self):
         """Test NCF extraction handles spaces"""
