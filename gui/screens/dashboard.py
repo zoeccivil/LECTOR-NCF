@@ -307,12 +307,6 @@ class DashboardScreen(QWidget):
         """Handle errors"""
         QMessageBox.critical(self, "Error", f"Error: {str(error)}")
 
-        self.search_box.setPlaceholderText("🔍 Buscar por NCF...")
-        self.search_box.setMaximumWidth(250)
-        self.search_box.textChanged.connect(self._on_search)
-        filter_layout.addWidget(self.search_box)
-        
-        filter_layout.addStretch()
         
         # Export button
         export_btn = QPushButton("📤 Exportar")

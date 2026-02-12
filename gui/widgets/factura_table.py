@@ -193,7 +193,7 @@ class FacturaTable(QTableWidget):
             
             # Total
             total = factura.get('total', 0) or 0
-            total_item = QTableWidgetItem(f"${total:,.2f}")
+            total_item = QTableWidgetItem(f"RD$ {total:,.2f}")
             total_item.setFlags(total_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             total_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.setItem(row, 5, total_item)
