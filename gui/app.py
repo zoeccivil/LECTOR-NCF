@@ -1,8 +1,9 @@
 """
-Main application window for LECTOR-NCF GUI
+Main application window for LECTOR-NCF GUI - Redesigned
 """
 from PyQt6.QtWidgets import QMainWindow, QStackedWidget
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont
 import sys
 import os
 
@@ -10,14 +11,31 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from gui.screens import DashboardScreen, EditorScreen, ExporterScreen
+from gui.utils.styles import GLOBAL_STYLES
+from gui.utils.icon_helper import IconHelper
+from gui.utils.theme import COLORS
 
 
 class LectorNCFApp(QMainWindow):
-    """Main application window"""
+    """Main application window - Redesigned with modern theme"""
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("LECTOR-NCF - Gestión de Facturas")
+        self.setWindowTitle("LECTOR-NCF - Gestión de Facturas OCR")
+        
+        # Set window icon
+        try:
+            icon = IconHelper.get_icon('ocr', COLORS['PRIMARY'], 48)
+            self.setWindowIcon(icon)
+        except:
+            pass  # Icon might not be available yet
+        
+        # Set minimum size and default size
+        self.setMinimumSize(1200, 700)
+        self.resize(1400, 900)
+        
+        # Apply global stylesheet
+        self.setStyleSheet(GLOBAL_STYLES)
         
         # Stacked widget for navigation
         self.stacked_widget = QStackedWidget()
