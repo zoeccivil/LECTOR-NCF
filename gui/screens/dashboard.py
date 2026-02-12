@@ -13,10 +13,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from gui.widgets import EmpresaList, FacturaTable
-from gui.widgets.components import SearchBox, IconButton, EmptyState
 from gui.utils import FirebaseWorkerPool
-from gui.utils.icon_helper import IconHelper
-from gui.utils.theme import COLORS, FONTS, SPACING, RADIUS
 from app.firebase_handler import firebase_handler
 
 
@@ -48,11 +45,10 @@ class DashboardScreen(QWidget):
         
         # Right content area
         content = QWidget()
-        content.setStyleSheet(f"background-color: {COLORS['GRAY_50']};")
+        content.setStyleSheet("background-color: #F9FAFB;")
         content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(SPACING['XL'], SPACING['XL'], 
-                                         SPACING['XL'], SPACING['XL'])
-        content_layout.setSpacing(SPACING['LG'])
+        content_layout.setContentsMargins(32, 32, 32, 32)
+        content_layout.setSpacing(24)
         
         # Header with title and tabs
         header = self._create_header()
@@ -60,39 +56,40 @@ class DashboardScreen(QWidget):
         
         # Tab widget for different states
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
                 border: none;
                 background-color: transparent;
-            }}
-            QTabBar::tab {{
+            }
+            QTabBar::tab {
                 background-color: transparent;
-                color: {COLORS['GRAY_700']};
-                padding: {SPACING['MD']}px {SPACING['XL']}px;
+                color: #6B7280;
+                padding: 12px 24px;
                 border: none;
                 border-bottom: 3px solid transparent;
-                font-size: {FONTS['SIZE_BODY']};
-                font-weight: {FONTS['WEIGHT_MEDIUM']};
-                margin-right: {SPACING['SM']}px;
-            }}
-            QTabBar::tab:selected {{
-                color: {COLORS['PRIMARY']};
-                border-bottom: 3px solid {COLORS['PRIMARY']};
-                font-weight: {FONTS['WEIGHT_SEMIBOLD']};
-            }}
-            QTabBar::tab:hover {{
-                color: {COLORS['PRIMARY_DARK']};
-                background-color: {COLORS['GRAY_100']};
-            }}
+                font-size: 14px;
+                font-weight: 500;
+                margin-right: 8px;
+            }
+            QTabBar::tab:selected {
+                color: #2563EB;
+                border-bottom: 3px solid #2563EB;
+                font-weight: 600;
+            }
+            QTabBar::tab:hover {
+                color: #1E40AF;
+                background-color: #F3F4F6;
+                border-radius: 6px 6px 0 0;
+            }
         """)
         
-        # Create tabs
+        # Create tabs with tables
         self.tab_todas = self._create_table_tab()
         self.tab_pendientes = self._create_table_tab()
         self.tab_revisadas = self._create_table_tab()
         self.tab_exportadas = self._create_table_tab()
         
-        # Set tab icons
+        # Add tabs
         self.tabs.addTab(self.tab_todas, "📋 Todas")
         self.tabs.addTab(self.tab_pendientes, "⏱️ Pendientes")
         self.tabs.addTab(self.tab_revisadas, "✓ Revisadas")
@@ -104,54 +101,87 @@ class DashboardScreen(QWidget):
         content_layout.addWidget(self.tabs)
         
         main_layout.addWidget(content)
+        
+        # Load initial data
+        self._load_empresas()
     
     def _create_header(self) -> QWidget:
         """Create header with title, search, and export button"""
         header = QWidget()
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(SPACING['LG'])
+        header_layout.setSpacing(24)
         
         # Title
         title = QLabel("Facturas OCR")
-        title.setStyleSheet(f"""
-            font-size: {FONTS['SIZE_HEADING']};
-            font-weight: {FONTS['WEIGHT_BOLD']};
-            color: {COLORS['GRAY_900']};
+        title.setStyleSheet("""
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
         """)
         header_layout.addWidget(title)
         
         header_layout.addStretch()
         
         # Search box
-        self.search_box = SearchBox(placeholder="Buscar por NCF, RNC...")
-        self.search_box.search_changed.connect(self._on_search)
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("🔍 Buscar por NCF, RNC o Razón Social...")
+        self.search_box.setMinimumWidth(300)
+        self.search_box.setStyleSheet("""
+            QLineEdit {
+                padding: 10px 16px;
+                border: 1px solid #D1D5DB;
+                border-radius: 8px;
+                background-color: #FFFFFF;
+                font-size: 13px;
+                color: #111827;
+            }
+            QLineEdit:focus {
+                border: 2px solid #2563EB;
+                outline: none;
+            }
+        """)
+        self.search_box.textChanged.connect(self._on_search)
         header_layout.addWidget(self.search_box)
         
-        # Refresh button
-        refresh_btn = IconButton('refresh', '', 'Actualizar datos', COLORS['GRAY_700'], 20)
+        # Refresh button (texto simple, no emoji)
+        refresh_btn = QPushButton("↻")  # ← Carácter Unicode, no emoji
+        refresh_btn.setToolTip("Actualizar datos")
+        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        refresh_btn.setFixedSize(40, 40)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FFFFFF;
+                border: 1px solid #D1D5DB;
+                border-radius: 8px;
+                font-size: 20px;
+                color: #374151;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #F3F4F6;
+                border-color: #9CA3AF;
+            }
+        """)
         refresh_btn.clicked.connect(self.refresh_data)
         header_layout.addWidget(refresh_btn)
         
         # Export button
-        export_btn = QPushButton()
-        export_btn.setText("  Exportar")
-        export_btn.setIcon(IconHelper.get_icon('export', COLORS['WHITE'], 20))
-        export_btn.setIconSize(QSize(20, 20))
+        export_btn = QPushButton("📤 Exportar")
         export_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        export_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLORS['PRIMARY']};
-                color: {COLORS['WHITE']};
+        export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2563EB;
+                color: #FFFFFF;
                 border: none;
-                border-radius: {RADIUS['MEDIUM']};
-                padding: {SPACING['MD']}px {SPACING['XL']}px;
-                font-size: {FONTS['SIZE_BODY']};
-                font-weight: {FONTS['WEIGHT_SEMIBOLD']};
-            }}
-            QPushButton:hover {{
-                background-color: {COLORS['PRIMARY_DARK']};
-            }}
+                border-radius: 8px;
+                padding: 10px 24px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #1E40AF;
+            }
         """)
         export_btn.clicked.connect(self._on_export_clicked)
         header_layout.addWidget(export_btn)
@@ -162,7 +192,7 @@ class DashboardScreen(QWidget):
         """Create a tab containing a factura table"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(0, SPACING['LG'], 0, 0)
+        layout.setContentsMargins(0, 16, 0, 0)
         
         # Create table
         table = FacturaTable()
@@ -203,20 +233,42 @@ class DashboardScreen(QWidget):
         
         estado = status_map.get(tab_index)
         
-        # Use OCR invoices collection
-        self.worker_pool.execute(
-            lambda: firebase_handler.get_ocr_facturas_by_empresa(self.current_empresa_id, estado),
-            on_success=self._on_facturas_loaded,
-            on_error=self._on_error
-        )
+        # Check if OCR method exists, otherwise use regular method
+        if hasattr(firebase_handler, 'get_ocr_facturas_by_empresa'):
+            # Use OCR invoices collection
+            self.worker_pool.execute(
+                lambda: firebase_handler.get_ocr_facturas_by_empresa(self.current_empresa_id, estado),
+                on_success=self._on_facturas_loaded,
+                on_error=self._on_error
+            )
+        else:
+            # Fallback to regular invoices (filter by estado if available)
+            self.worker_pool.execute(
+                lambda: firebase_handler.get_facturas_by_empresa(self.current_empresa_id),
+                on_success=lambda facturas: self._on_facturas_loaded_with_filter(facturas, estado),
+                on_error=self._on_error
+            )
     
-    def refresh_data(self):
-        """Refresh empresas and facturas data"""
+    def _on_facturas_loaded_with_filter(self, facturas: list, estado: str):
+        """Handle facturas loaded with manual filtering"""
+        if estado:
+            # Filter facturas by estado
+            filtered = [f for f in facturas if f.get('estado') == estado]
+            self._on_facturas_loaded(filtered)
+        else:
+            self._on_facturas_loaded(facturas)
+    
+    def _load_empresas(self):
+        """Load empresas from Firebase"""
         self.worker_pool.execute(
             firebase_handler.get_empresas,
             on_success=self._on_empresas_loaded,
             on_error=self._on_error
         )
+    
+    def refresh_data(self):
+        """Refresh empresas and facturas data"""
+        self._load_empresas()
     
     def _on_empresas_loaded(self, empresas: list):
         """Handle empresas data loaded"""
@@ -251,7 +303,7 @@ class DashboardScreen(QWidget):
         
         search_text = text.lower()
         for row in range(table.rowCount()):
-            # Search in NCF (column 1) and RNC (column 2)
+            # Search in NCF (column 1), RNC (column 2), and Razón Social (column 3)
             ncf_item = table.item(row, 1)
             rnc_item = table.item(row, 2)
             razon_item = table.item(row, 3)
@@ -264,15 +316,39 @@ class DashboardScreen(QWidget):
             elif razon_item and search_text in razon_item.text().lower():
                 show = True
             
+            # If search is empty, show all rows
+            if not search_text:
+                show = True
+            
             table.setRowHidden(row, not show)
     
     def _on_export_clicked(self):
         """Handle export button click"""
         if self.current_empresa_id:
+            # Verificar que haya facturas revisadas
+            if hasattr(firebase_handler, 'get_ocr_facturas_by_empresa'):
+                revisadas = firebase_handler.get_ocr_facturas_by_empresa(
+                    self.current_empresa_id, 
+                    estado='revisada'
+                )
+                
+                if not revisadas:
+                    QMessageBox.warning(
+                        self,
+                        "Sin facturas revisadas",
+                        "No hay facturas revisadas para exportar en esta empresa.\n\n"
+                        "Por favor, revisa las facturas pendientes primero."
+                    )
+                    return
+            
+            # Emitir señal con empresa_id
             self.export_requested.emit(self.current_empresa_id)
         else:
-            QMessageBox.warning(self, "Advertencia", 
-                              "Seleccione una empresa primero")
+            QMessageBox.warning(
+                self, 
+                "Advertencia", 
+                "Seleccione una empresa primero"
+            )
     
     def _on_delete_factura(self, empresa_id: str, factura_id: str):
         """Handle factura delete request"""
@@ -286,9 +362,14 @@ class DashboardScreen(QWidget):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            # Use OCR invoice delete method
+            # Check if OCR delete method exists
+            if hasattr(firebase_handler, 'delete_ocr_factura'):
+                delete_method = lambda: firebase_handler.delete_ocr_factura(factura_id)
+            else:
+                delete_method = lambda: firebase_handler.delete_factura(empresa_id, factura_id)
+            
             self.worker_pool.execute(
-                lambda: firebase_handler.delete_ocr_factura(factura_id),
+                delete_method,
                 on_success=lambda success: self._on_delete_complete(success),
                 on_error=self._on_error
             )
@@ -303,107 +384,7 @@ class DashboardScreen(QWidget):
         else:
             QMessageBox.warning(self, "Error", "No se pudo eliminar la factura")
     
-    def _on_error(self, error: Exception):
-        """Handle errors"""
-        QMessageBox.critical(self, "Error", f"Error: {str(error)}")
-
-        
-        # Export button
-        export_btn = QPushButton("📤 Exportar")
-        export_btn.setProperty("class", "primary")
-        export_btn.setFixedHeight(36)
-        export_btn.clicked.connect(self._on_export_clicked)
-        filter_layout.addWidget(export_btn)
-        
-        return filter_widget
-    
-    def refresh_data(self):
-        """Refresh empresas and facturas data"""
-        self.worker_pool.execute(
-            firebase_handler.get_empresas,
-            on_success=self._on_empresas_loaded,
-            on_error=self._on_error
-        )
-    
-    def _on_empresas_loaded(self, empresas: list):
-        """Handle empresas data loaded"""
-        self.empresa_list.set_empresas(empresas)
-        
-        # Auto-select first empresa if available
-        if empresas and not self.current_empresa_id:
-            first_empresa_id = empresas[0].get('id')
-            if first_empresa_id:
-                self._load_facturas(first_empresa_id)
-    
-    def _on_empresa_selected(self, empresa_id: str):
-        """Handle empresa selection"""
-        self._load_facturas(empresa_id)
-    
-    def _load_facturas(self, empresa_id: str):
-        """Load facturas for selected empresa"""
-        self.current_empresa_id = empresa_id
-        self.worker_pool.execute(
-            lambda: firebase_handler.get_facturas_by_empresa(empresa_id),
-            on_success=self._on_facturas_loaded,
-            on_error=self._on_error
-        )
-    
-    def _on_facturas_loaded(self, facturas: list):
-        """Handle facturas data loaded"""
-        self.current_facturas = facturas
-        if self.current_empresa_id:
-            self.factura_table.set_facturas(self.current_empresa_id, facturas)
-    
-    def _apply_filter(self, status: str):
-        """Apply status filter to table"""
-        self.factura_table.filter_by_status(status)
-    
-    def _on_search(self, text: str):
-        """Handle search text change"""
-        search_text = text.lower()
-        for row in range(self.factura_table.rowCount()):
-            ncf_item = self.factura_table.item(row, 0)
-            if ncf_item:
-                ncf = ncf_item.text().lower()
-                show = search_text in ncf
-                self.factura_table.setRowHidden(row, not show)
-    
-    def _on_export_clicked(self):
-        """Handle export button click"""
-        if self.current_empresa_id:
-            self.export_requested.emit(self.current_empresa_id)
-        else:
-            QMessageBox.warning(self, "Advertencia", 
-                              "Seleccione una empresa primero")
-    
-    def _on_delete_factura(self, empresa_id: str, factura_id: str):
-        """Handle factura delete request"""
-        reply = QMessageBox.question(
-            self, 
-            "Confirmar Eliminación",
-            "¿Está seguro de que desea eliminar esta factura?\n\n"
-            "Esta acción no se puede deshacer.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            self.worker_pool.execute(
-                lambda: firebase_handler.delete_factura(empresa_id, factura_id),
-                on_success=lambda success: self._on_delete_complete(success),
-                on_error=self._on_error
-            )
-    
-    def _on_delete_complete(self, success: bool):
-        """Handle delete completion"""
-        if success:
-            QMessageBox.information(self, "Éxito", "Factura eliminada correctamente")
-            # Refresh facturas
-            if self.current_empresa_id:
-                self._load_facturas(self.current_empresa_id)
-        else:
-            QMessageBox.warning(self, "Error", "No se pudo eliminar la factura")
-    
-    def _on_error(self, error_msg: str):
+    def _on_error(self, error):
         """Handle error"""
+        error_msg = str(error) if error else "Error desconocido"
         QMessageBox.critical(self, "Error", f"Error: {error_msg}")

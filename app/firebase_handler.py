@@ -471,7 +471,6 @@ class FirebaseHandler:
             app_logger.error(f"Error deleting factura {factura_id}: {e}")
             return False
     
-<<<<<<< Updated upstream
     # OCR Invoices Methods - New Collection for WhatsApp OCR Invoices
     
     def save_ocr_invoice(self, invoice_data: dict, empresa_id: int, whatsapp_msg_id: str = None) -> bool:
@@ -525,43 +524,78 @@ class FirebaseHandler:
             app_logger.error(f"Error saving OCR invoice to Firebase: {e}")
             return False
     
-    def get_ocr_facturas_by_empresa(self, empresa_id: int, estado: str = None) -> list:
+    def get_ocr_facturas_by_empresa(self, empresa_id: str, estado: str = None) -> List[Dict]:
         """
-        Get OCR invoices for a specific company
-        
-        Args:
-            empresa_id: Company ID
-            estado: Optional filter by status ('pendiente', 'revisada', 'exportada')
-            
-        Returns:
-            List of OCR invoice dictionaries
+        Get OCR-processed invoices from /ocr_invoices/ collection.
+        estado: 'pendiente', 'revisada', 'exportada', or None (all)
         """
         if not self.db:
             app_logger.warning("Firebase not initialized")
             return []
         
         try:
-            # Query by company_id
-            query = self.db.collection('ocr_invoices').where('company_id', '==', empresa_id)
+            # Extract original company ID
+            company_id = int(empresa_id.replace('comp_', ''))
             
-            # Add status filter if provided
+            # Build query
+            query = self.db.collection('ocr_invoices') \
+                .where('company_id', '==', company_id)
+            
+            # Filter by estado if provided
             if estado:
                 query = query.where('estado', '==', estado)
             
-            # Order by processed_at descending
-            query = query.order_by('processed_at', direction=firestore.Query.DESCENDING)
+            # ⚠️ TEMPORAL: Comentado hasta que el índice esté listo
+            # query = query.order_by('processed_at', direction=firestore.Query.DESCENDING)
+            
+            docs = query.stream()
             
             facturas = []
-            for doc in query.stream():
-                factura_data = doc.to_dict()
-                factura_data['id'] = doc.id
-                facturas.append(factura_data)
+            for doc in docs:
+                data = doc.to_dict()
+                
+                # Parse processed_at
+                processed_at = data.get('processed_at', '')
+                if hasattr(processed_at, 'strftime'):
+                    processed_at_str = processed_at.strftime('%Y-%m-%d %H:%M')
+                else:
+                    processed_at_str = str(processed_at)
+                
+                # Parse fecha_emision
+                fecha_emision = data.get('fecha_emision', '')
+                if hasattr(fecha_emision, 'strftime'):
+                    fecha_emision = fecha_emision.strftime('%Y-%m-%d')
+                
+                factura = {
+                    'id': doc.id,
+                    'ncf': data.get('ncf', ''),
+                    'rnc': data.get('rnc', ''),
+                    'razon_social': data.get('razon_social', ''),
+                    'fecha_emision': fecha_emision,
+                    'subtotal': float(data.get('subtotal', 0)),
+                    'itbis': float(data.get('itbis', 0)),
+                    'total': float(data.get('total', 0)),
+                    'imagen_original': data.get('imagen_original', ''),
+                    'confianza_ocr': float(data.get('confianza_ocr', 0)),
+                    'revisada': data.get('revisada', False),
+                    'exportada': data.get('exportada', False),
+                    'estado': data.get('estado', 'pendiente'),
+                    'processed_at': processed_at_str,
+                    '_ocr_invoice': True
+                }
+                
+                facturas.append(factura)
             
-            app_logger.info(f"Loaded {len(facturas)} OCR facturas for empresa {empresa_id}")
+            # ✅ Ordenar manualmente en Python (mientras el índice se crea)
+            facturas.sort(key=lambda x: x.get('processed_at', ''), reverse=True)
+            
+            app_logger.info(f"Loaded {len(facturas)} OCR facturas for empresa {empresa_id} (estado: {estado or 'all'})")
             return facturas
-            
+        
         except Exception as e:
-            app_logger.error(f"Error getting OCR facturas for empresa {empresa_id}: {e}")
+            app_logger.error(f"Error getting OCR facturas: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     def get_ocr_factura(self, factura_id: str) -> Optional[dict]:
@@ -709,54 +743,6 @@ class FirebaseHandler:
         except Exception as e:
             app_logger.error(f"Error getting OCR facturas count for empresa {empresa_id}: {e}")
             return {'pendiente': 0, 'revisada': 0, 'exportada': 0}
-=======
-    # ============================================================================
-    # LEGACY METHODS (for future OCR integration)
-    # ============================================================================
-    
-    def save_invoice(self, invoice: Invoice, empresa_id: str) -> Optional[str]:
-        """
-        Save a new invoice (for future OCR integration).
-        This will create invoices in /invoices/ collection.
-        """
-        if not self.db:
-            return None
-        
-        try:
-            # Extract company_id from empresa_id
-            company_id = int(empresa_id.replace('comp_', ''))
-            
-            # Prepare invoice data in facot-app format
-            invoice_data = {
-                'company_id': company_id,
-                'invoice_number': invoice.ncf,
-                'ncf': invoice.ncf,
-                'rnc': invoice.rnc,
-                'third_party_name': invoice.razon_social,
-                'invoice_date': invoice.fecha_emision,
-                'total_amount': invoice.total,
-                'total_amount_rd': invoice.total,
-                'itbis': invoice.itbis,
-                'currency': 'DOP',
-                'exchange_rate': 1.0,
-                'invoice_type': 'Compra',
-                'invoice_category': None,  # Not reviewed yet
-                'attachment_storage_path': invoice.imagen_original,
-                'created_at': datetime.now().isoformat(),
-                'ocr_processed': True,  # Flag for OCR-generated invoices
-                'confianza_ocr': invoice.confianza_ocr
-            }
-            
-            # Add to Firestore
-            doc_ref = self.db.collection('invoices').add(invoice_data)
-            
-            app_logger.info(f"Saved new OCR invoice: {doc_ref[1].id}")
-            return doc_ref[1].id
-        
-        except Exception as e:
-            app_logger.error(f"Error saving OCR invoice: {e}")
-            return None
->>>>>>> Stashed changes
 
 
 # Create singleton instance

@@ -1,269 +1,343 @@
 """
-Factura table widget - Redesigned
+Factura table widget - Redesigned with row numbering and better styling
 """
-from PyQt6.QtWidgets import (QTableWidget, QTableWidgetItem, QPushButton, 
-                             QWidget, QHBoxLayout, QLabel)
+from PyQt6.QtWidgets import (QTableWidget, QTableWidgetItem, QHeaderView,
+                             QPushButton, QWidget, QHBoxLayout, QLabel)
 from PyQt6.QtCore import pyqtSignal, Qt, QSize
-from PyQt6.QtGui import QColor
-import sys
-import os
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
-from gui.utils.icon_helper import IconHelper
-from gui.utils.theme import COLORS, FONTS, SPACING, RADIUS
-from gui.widgets.components import StatusBadge
-
-
-class ActionButtons(QWidget):
-    """Action buttons widget for table row with SVG icons"""
-    
-    edit_clicked = pyqtSignal()
-    delete_clicked = pyqtSignal()
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(SPACING['XS'], SPACING['XS'], SPACING['XS'], SPACING['XS'])
-        layout.setSpacing(SPACING['XS'])
-        
-        # Edit button with SVG icon
-        self.edit_btn = QPushButton()
-        self.edit_btn.setIcon(IconHelper.get_icon('edit', COLORS['PRIMARY'], 16))
-        self.edit_btn.setIconSize(QSize(16, 16))
-        self.edit_btn.setFixedSize(32, 32)
-        self.edit_btn.setToolTip("Editar factura")
-        self.edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.edit_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLORS['PRIMARY_LIGHT']};
-                border: none;
-                border-radius: {RADIUS['SMALL']};
-            }}
-            QPushButton:hover {{
-                background-color: {COLORS['PRIMARY']};
-            }}
-        """)
-        self.edit_btn.clicked.connect(self.edit_clicked.emit)
-        layout.addWidget(self.edit_btn)
-        
-        # Delete button with SVG icon
-        self.delete_btn = QPushButton()
-        self.delete_btn.setIcon(IconHelper.get_icon('delete', COLORS['ERROR'], 16))
-        self.delete_btn.setIconSize(QSize(16, 16))
-        self.delete_btn.setFixedSize(32, 32)
-        self.delete_btn.setToolTip("Eliminar factura")
-        self.delete_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.delete_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #FEE2E2;
-                border: none;
-                border-radius: {RADIUS['SMALL']};
-            }}
-            QPushButton:hover {{
-                background-color: {COLORS['ERROR']};
-            }}
-        """)
-        self.delete_btn.clicked.connect(self.delete_clicked.emit)
-        layout.addWidget(self.delete_btn)
-        
-        layout.addStretch()
+from PyQt6.QtGui import QColor, QFont
+from typing import List, Dict
 
 
 class FacturaTable(QTableWidget):
-    """Table widget for displaying facturas - Redesigned with numbering and modern UI"""
+    """Table widget for displaying facturas with modern design"""
     
     factura_double_clicked = pyqtSignal(str, str)  # empresa_id, factura_id
-    factura_edit_clicked = pyqtSignal(str, str)    # empresa_id, factura_id
-    factura_delete_clicked = pyqtSignal(str, str)  # empresa_id, factura_id
+    factura_edit_clicked = pyqtSignal(str, str)
+    factura_delete_clicked = pyqtSignal(str, str)
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.facturas = []
-        self.empresa_id = None
+        self.current_empresa_id = None
+        self.facturas_data = []
         self._init_ui()
     
     def _init_ui(self):
         """Initialize table UI"""
-        # Setup columns with numbering column
-        headers = ["#", "NCF", "RNC", "Razón Social", "Fecha", "Total", "Estado", "Acciones"]
-        self.setColumnCount(len(headers))
+        # Set column count
+        self.setColumnCount(8)
+        
+        # Set headers
+        headers = ['#', 'NCF', 'RNC', 'RAZÓN SOCIAL', 'FECHA', 'TOTAL', 'ESTADO', 'ACCIONES']
         self.setHorizontalHeaderLabels(headers)
         
-        # Column widths
-        self.setColumnWidth(0, 50)   # #
-        self.setColumnWidth(1, 140)  # NCF
-        self.setColumnWidth(2, 120)  # RNC
-        self.setColumnWidth(3, 220)  # Razón Social
-        self.setColumnWidth(4, 100)  # Fecha
-        self.setColumnWidth(5, 120)  # Total
-        self.setColumnWidth(6, 120)  # Estado
-        self.setColumnWidth(7, 100)  # Acciones
-        
-        # Table settings
+        # Configure table
+        self.setAlternatingRowColors(True)
         self.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.setAlternatingRowColors(True)
+        self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.verticalHeader().setVisible(False)
         self.setShowGrid(False)
         
-        # Set minimum row height
+        # ✅ Set row height to 48px (ajustado para centrar mejor)
         self.verticalHeader().setDefaultSectionSize(48)
         
-        # Apply custom styling
-        self.setStyleSheet(f"""
-            QTableWidget {{
-                background-color: {COLORS['WHITE']};
-                border: 1px solid {COLORS['GRAY_200']};
-                border-radius: {RADIUS['MEDIUM']};
-                gridline-color: {COLORS['GRAY_100']};
-            }}
-            QTableWidget::item {{
-                padding: {SPACING['MD']}px;
-                border-bottom: 1px solid {COLORS['GRAY_100']};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLORS['PRIMARY_LIGHT']};
-                color: {COLORS['PRIMARY_DARK']};
-            }}
-            QTableWidget::item:hover {{
-                background-color: {COLORS['GRAY_50']};
-            }}
-            QHeaderView::section {{
-                background-color: {COLORS['WHITE']};
-                padding: {SPACING['MD']}px;
+        # Configure headers
+        header = self.horizontalHeader()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)  # #
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # NCF
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # RNC
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)  # Razón Social
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Fecha
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Total
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)  # Estado
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)  # Acciones
+        
+        # Set column widths
+        self.setColumnWidth(0, 60)   # # (número)
+        self.setColumnWidth(6, 130)  # Estado (aumentado para badges)
+        self.setColumnWidth(7, 90)   # Acciones (ajustado para 2 botones)
+        
+        # Apply styles
+        self.setStyleSheet("""
+            QTableWidget {
+                background-color: #FFFFFF;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+                gridline-color: #F3F4F6;
+            }
+            
+            QTableWidget::item {
+                padding: 8px 12px;
+                color: #111827;
+                font-size: 13px;
+                border-bottom: 1px solid #F3F4F6;
+            }
+            
+            QTableWidget::item:selected {
+                background-color: #DBEAFE;
+                color: #1E40AF;
+            }
+            
+            QTableWidget::item:hover {
+                background-color: #F9FAFB;
+            }
+            
+            QHeaderView::section {
+                background-color: #F9FAFB;
+                color: #374151;
+                padding: 12px 8px;
                 border: none;
-                border-bottom: 2px solid {COLORS['GRAY_200']};
-                font-weight: {FONTS['WEIGHT_SEMIBOLD']};
-                color: {COLORS['GRAY_700']};
-                font-size: {FONTS['SIZE_CAPTION']};
+                border-bottom: 2px solid #E5E7EB;
+                font-weight: 600;
+                font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-            }}
+            }
+            
+            QTableWidget::item:alternate {
+                background-color: #FAFAFA;
+            }
         """)
         
         # Connect double click
-        self.cellDoubleClicked.connect(self._on_double_click)
+        self.itemDoubleClicked.connect(self._on_item_double_clicked)
     
-    def set_facturas(self, empresa_id: str, facturas: list):
-        """
-        Populate table with facturas
+    def set_facturas(self, empresa_id: str, facturas: List[Dict]):
+        """Set facturas data and populate table"""
+        self.current_empresa_id = empresa_id
+        self.facturas_data = facturas
+        self._populate_table()
+    
+    def _populate_table(self):
+        """Populate table with facturas data"""
+        self.setRowCount(0)
         
-        Args:
-            empresa_id: Empresa document ID
-            facturas: List of factura dictionaries
-        """
-        self.empresa_id = empresa_id
-        self.facturas = facturas
-        self.setRowCount(len(facturas))
-        
-        for row, factura in enumerate(facturas):
-            # Row number
-            num_item = QTableWidgetItem(str(row + 1))
+        for idx, factura in enumerate(self.facturas_data):
+            row = self.rowCount()
+            self.insertRow(row)
+            
+            # Column 0: Row number
+            num_item = QTableWidgetItem(str(idx + 1))
             num_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            num_item.setFlags(num_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            num_item.setForeground(QColor(COLORS['GRAY_700']))
+            num_item.setForeground(QColor('#6B7280'))
+            font = num_item.font()
+            font.setWeight(QFont.Weight.Bold)
+            num_item.setFont(font)
             self.setItem(row, 0, num_item)
             
-            # NCF
+            # Column 1: NCF
             ncf_item = QTableWidgetItem(factura.get('ncf', ''))
-            ncf_item.setFlags(ncf_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            ncf_item.setForeground(QColor('#2563EB'))
+            font_ncf = ncf_item.font()
+            font_ncf.setWeight(QFont.Weight.Medium)
+            ncf_item.setFont(font_ncf)
             self.setItem(row, 1, ncf_item)
             
-            # RNC
+            # Column 2: RNC
             rnc_item = QTableWidgetItem(factura.get('rnc', ''))
-            rnc_item.setFlags(rnc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            rnc_item.setForeground(QColor('#111827'))
             self.setItem(row, 2, rnc_item)
             
-            # Razón Social
+            # Column 3: Razón Social
             razon_item = QTableWidgetItem(factura.get('razon_social', ''))
-            razon_item.setFlags(razon_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            razon_item.setForeground(QColor('#111827'))
             self.setItem(row, 3, razon_item)
             
-            # Fecha
-            fecha = factura.get('fecha_emision', '')
-            # Try to format date if it's a datetime object
-            if hasattr(fecha, 'strftime'):
-                fecha = fecha.strftime('%d/%m/%Y')
-            fecha_item = QTableWidgetItem(str(fecha))
-            fecha_item.setFlags(fecha_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            # Column 4: Fecha
+            fecha_item = QTableWidgetItem(factura.get('fecha_emision', ''))
+            fecha_item.setForeground(QColor('#111827'))
             self.setItem(row, 4, fecha_item)
             
-            # Total
-            total = factura.get('total', 0) or 0
-            total_item = QTableWidgetItem(f"RD$ {total:,.2f}")
-            total_item.setFlags(total_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            total_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            # Column 5: Total
+            total = factura.get('total', 0)
+            moneda = factura.get('moneda', 'DOP')
+            total_str = f"{moneda} {total:,.2f}" if total else ''
+            total_item = QTableWidgetItem(total_str)
+            total_item.setForeground(QColor('#111827'))
+            font_total = total_item.font()
+            font_total.setWeight(QFont.Weight.Bold)
+            total_item.setFont(font_total)
             self.setItem(row, 5, total_item)
             
-            # Status badge using the new component
-            status = self._get_status(factura)
-            badge = StatusBadge(status)
-            badge_container = QWidget()
-            badge_layout = QHBoxLayout(badge_container)
-            badge_layout.setContentsMargins(0, 0, 0, 0)
-            badge_layout.addWidget(badge)
-            badge_layout.addStretch()
-            self.setCellWidget(row, 6, badge_container)
+            # Column 6: Estado badge
+            estado_widget = self._create_estado_badge(factura.get('estado', 'pendiente'))
+            self.setCellWidget(row, 6, estado_widget)
             
-            # Action buttons
-            actions = ActionButtons()
-            actions.edit_clicked.connect(
-                lambda _, r=row: self._on_edit_clicked(r)
-            )
-            actions.delete_clicked.connect(
-                lambda _, r=row: self._on_delete_clicked(r)
-            )
-            self.setCellWidget(row, 7, actions)
+            # Column 7: Action buttons
+            actions_widget = self._create_action_buttons(factura)
+            self.setCellWidget(row, 7, actions_widget)
     
-    def _get_status(self, factura: dict) -> str:
-        """Determine factura status"""
-        # Check estado field first (new OCR invoices collection)
-        if 'estado' in factura:
-            return factura['estado']
+    def _create_estado_badge(self, estado: str) -> QWidget:
+        """Create estado badge widget - centered and compact"""
+        # ✅ Widget container con altura fija
+        widget = QWidget()
+        widget.setFixedHeight(48)  # Altura de la fila
         
-        # Fall back to old logic for existing invoices
-        if factura.get('exportada', False):
-            return "exportada"
-        elif factura.get('revisada', False):
-            return "revisada"
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Badge label
+        badge = QLabel()
+        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # ✅ Configure badge based on estado - más compacto
+        if estado == 'pendiente':
+            badge.setText('⏱ Pendiente')
+            badge.setStyleSheet("""
+                background-color: #FEF3C7;
+                color: #92400E;
+                padding: 6px 10px;
+                border-radius: 10px;
+                font-size: 11px;
+                font-weight: 600;
+            """)
+        elif estado == 'revisada':
+            badge.setText('✓ Revisada')
+            badge.setStyleSheet("""
+                background-color: #D1FAE5;
+                color: #065F46;
+                padding: 6px 10px;
+                border-radius: 10px;
+                font-size: 11px;
+                font-weight: 600;
+            """)
+        elif estado == 'exportada':
+            badge.setText('📤 Exportada')
+            badge.setStyleSheet("""
+                background-color: #E5E7EB;
+                color: #374151;
+                padding: 6px 10px;
+                border-radius: 10px;
+                font-size: 11px;
+                font-weight: 600;
+            """)
         else:
-            return "pendiente"
+            badge.setText(estado.capitalize())
+            badge.setStyleSheet("""
+                background-color: #F3F4F6;
+                color: #6B7280;
+                padding: 6px 10px;
+                border-radius: 10px;
+                font-size: 11px;
+                font-weight: 600;
+            """)
+        
+        layout.addWidget(badge)
+        return widget
     
-    def _on_double_click(self, row: int, column: int):
-        """Handle row double click"""
-        if 0 <= row < len(self.facturas):
-            factura = self.facturas[row]
-            self.factura_double_clicked.emit(self.empresa_id, factura.get('id'))
+    def _create_action_buttons(self, factura: Dict) -> QWidget:
+        """Create action buttons widget - centered and compact"""
+        # ✅ Widget container con altura fija
+        widget = QWidget()
+        widget.setFixedHeight(48)  # Altura de la fila
+        
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # ✅ Edit button - más pequeño y centrado
+        btn_edit = QPushButton()
+        btn_edit.setText('✏️')
+        btn_edit.setToolTip('Editar factura')
+        btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_edit.setFixedSize(30, 30)
+        btn_edit.setStyleSheet("""
+            QPushButton {
+                background-color: #DBEAFE;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #BFDBFE;
+            }
+            QPushButton:pressed {
+                background-color: #93C5FD;
+            }
+        """)
+        btn_edit.clicked.connect(
+            lambda: self.factura_edit_clicked.emit(self.current_empresa_id, factura['id'])
+        )
+        layout.addWidget(btn_edit)
+        
+        # ✅ Delete button - más pequeño y centrado
+        btn_delete = QPushButton()
+        btn_delete.setText('🗑️')
+        btn_delete.setToolTip('Eliminar factura')
+        btn_delete.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_delete.setFixedSize(30, 30)
+        btn_delete.setStyleSheet("""
+            QPushButton {
+                background-color: #FEE2E2;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #FECACA;
+            }
+            QPushButton:pressed {
+                background-color: #FCA5A5;
+            }
+        """)
+        btn_delete.clicked.connect(
+            lambda: self.factura_delete_clicked.emit(self.current_empresa_id, factura['id'])
+        )
+        layout.addWidget(btn_delete)
+        
+        return widget
     
-    def _on_edit_clicked(self, row: int):
-        """Handle edit button click"""
-        if 0 <= row < len(self.facturas):
-            factura = self.facturas[row]
-            self.factura_edit_clicked.emit(self.empresa_id, factura.get('id'))
-    
-    def _on_delete_clicked(self, row: int):
-        """Handle delete button click"""
-        if 0 <= row < len(self.facturas):
-            factura = self.facturas[row]
-            self.factura_delete_clicked.emit(self.empresa_id, factura.get('id'))
+    def _on_item_double_clicked(self, item: QTableWidgetItem):
+        """Handle item double click"""
+        if not self.current_empresa_id:
+            return
+        
+        row = item.row()
+        if row < len(self.facturas_data):
+            factura = self.facturas_data[row]
+            self.factura_double_clicked.emit(self.current_empresa_id, factura['id'])
     
     def filter_by_status(self, status: str):
-        """
-        Filter table by status
-        
-        Args:
-            status: 'todas', 'pendiente', 'revisada', or 'exportada'
-        """
+        """Filter table by status"""
         for row in range(self.rowCount()):
-            if status == 'todas':
-                self.setRowHidden(row, False)
-            else:
-                factura = self.facturas[row]
-                factura_status = self._get_status(factura)
+            if row < len(self.facturas_data):
+                factura = self.facturas_data[row]
+                estado = factura.get('estado', 'pendiente')
                 
-                show = (factura_status == status)
+                if status == 'all':
+                    self.setRowHidden(row, False)
+                elif status == 'pending':
+                    self.setRowHidden(row, estado != 'pendiente')
+                elif status == 'reviewed':
+                    self.setRowHidden(row, estado != 'revisada')
+    
+    def filter_by_text(self, text: str):
+        """Filter table by search text"""
+        search_text = text.lower()
+        
+        for row in range(self.rowCount()):
+            if row < len(self.facturas_data):
+                factura = self.facturas_data[row]
                 
-                self.setRowHidden(row, not show)
+                # Search in NCF, RNC, and Razón Social
+                ncf = factura.get('ncf', '').lower()
+                rnc = factura.get('rnc', '').lower()
+                razon = factura.get('razon_social', '').lower()
+                
+                match = (search_text in ncf or 
+                        search_text in rnc or 
+                        search_text in razon)
+                
+                self.setRowHidden(row, not match and len(search_text) > 0)
+    
+    def clear_table(self):
+        """Clear all table data"""
+        self.setRowCount(0)
+        self.facturas_data = []
+        self.current_empresa_id = None
