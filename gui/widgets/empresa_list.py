@@ -1,44 +1,67 @@
 """
-Empresa list widget (sidebar)
+Empresa list widget (sidebar) - Redesigned
 """
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QListWidget, 
-                             QListWidgetItem, QHBoxLayout)
-from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtGui import QFont
+                             QListWidgetItem, QHBoxLayout, QGraphicsDropShadowEffect)
+from PyQt6.QtCore import pyqtSignal, Qt, QSize
+from PyQt6.QtGui import QFont, QColor
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from gui.utils.icon_helper import IconHelper
+from gui.utils.theme import COLORS, FONTS, SPACING, RADIUS
 
 
 class EmpresaListItem(QWidget):
-    """Custom widget for empresa list item with badge"""
+    """Custom widget for empresa list item with circular badge"""
     
     def __init__(self, empresa_data: dict, parent=None):
         super().__init__(parent)
         self.empresa_data = empresa_data
-        
+        self._init_ui()
+    
+    def _init_ui(self):
+        """Initialize UI components"""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(SPACING['LG'], SPACING['MD'], SPACING['LG'], SPACING['MD'])
+        layout.setSpacing(SPACING['MD'])
+        
+        # Company icon
+        icon_label = QLabel()
+        icon_pixmap = IconHelper.get_pixmap('company', 20, COLORS['GRAY_700'])
+        icon_label.setPixmap(icon_pixmap)
+        layout.addWidget(icon_label)
         
         # Empresa name
-        name_label = QLabel(empresa_data.get('nombre', 'Sin Nombre'))
-        name_label.setStyleSheet("color: #212121; font-weight: 600;")
+        name_label = QLabel(self.empresa_data.get('nombre', 'Sin Nombre'))
+        name_label.setStyleSheet(f"""
+            color: {COLORS['GRAY_900']};
+            font-weight: {FONTS['WEIGHT_SEMIBOLD']};
+            font-size: {FONTS['SIZE_BODY']};
+        """)
         layout.addWidget(name_label, 1)
         
-        # Badge with count
-        total = empresa_data.get('total_facturas', 0)
-        badge = QLabel(str(total))
-        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        badge.setFixedSize(30, 20)
-        badge.setStyleSheet("""
-            background-color: #1976D2;
-            color: white;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 600;
-        """)
-        layout.addWidget(badge)
+        # Circular badge with count
+        total = self.empresa_data.get('total_facturas', 0)
+        if total > 0:
+            badge = QLabel(str(total))
+            badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            badge.setFixedSize(24, 24)
+            badge.setStyleSheet(f"""
+                background-color: {COLORS['PRIMARY']};
+                color: {COLORS['WHITE']};
+                border-radius: 12px;
+                font-size: {FONTS['SIZE_CAPTION']};
+                font-weight: {FONTS['WEIGHT_BOLD']};
+            """)
+            layout.addWidget(badge)
 
 
 class EmpresaList(QWidget):
-    """Sidebar widget with empresa list"""
+    """Sidebar widget with empresa list - Redesigned"""
     
     empresa_selected = pyqtSignal(str)  # Emits empresa_id
     
@@ -53,44 +76,75 @@ class EmpresaList(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        # Header
+        # Header with logo
         header = QWidget()
-        header.setFixedHeight(80)
-        header.setStyleSheet("background-color: #1976D2;")
+        header.setFixedHeight(100)
+        header.setStyleSheet(f"background-color: {COLORS['PRIMARY']};")
         header_layout = QVBoxLayout(header)
-        header_layout.setContentsMargins(20, 20, 20, 20)
+        header_layout.setContentsMargins(SPACING['XL'], SPACING['XL'], SPACING['XL'], SPACING['XL'])
+        header_layout.setSpacing(SPACING['XS'])
         
+        # Logo icon
+        logo_label = QLabel()
+        logo_pixmap = IconHelper.get_pixmap('ocr', 32, COLORS['WHITE'])
+        logo_label.setPixmap(logo_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(logo_label)
+        
+        # Title
         title = QLabel("LECTOR-NCF")
-        title.setStyleSheet("color: white; font-size: 20px; font-weight: bold;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet(f"""
+            color: {COLORS['WHITE']};
+            font-size: {FONTS['SIZE_TITLE']};
+            font-weight: {FONTS['WEIGHT_BOLD']};
+        """)
         header_layout.addWidget(title)
         
-        subtitle = QLabel("Gestión de Facturas")
-        subtitle.setStyleSheet("color: #E3F2FD; font-size: 12px;")
+        # Subtitle
+        subtitle = QLabel("Facturas OCR")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle.setStyleSheet(f"""
+            color: {COLORS['PRIMARY_LIGHT']};
+            font-size: {FONTS['SIZE_CAPTION']};
+        """)
         header_layout.addWidget(subtitle)
         
         layout.addWidget(header)
         
         # List section header
-        list_header = QLabel("EMPRESAS")
-        list_header.setStyleSheet("""
-            padding: 12px 16px;
-            color: #757575;
-            font-size: 11px;
-            font-weight: 600;
-            background-color: #F8F9FA;
+        list_header = QLabel("🏢 EMPRESAS")
+        list_header.setStyleSheet(f"""
+            padding: {SPACING['MD']}px {SPACING['LG']}px;
+            color: {COLORS['GRAY_700']};
+            font-size: {FONTS['SIZE_CAPTION']};
+            font-weight: {FONTS['WEIGHT_SEMIBOLD']};
+            background-color: {COLORS['GRAY_50']};
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         """)
         layout.addWidget(list_header)
         
         # Empresa list
         self.list_widget = QListWidget()
-        self.list_widget.setStyleSheet("""
-            QListWidget {
+        self.list_widget.setStyleSheet(f"""
+            QListWidget {{
                 border: none;
-                background-color: white;
-            }
-            QListWidget::item {
-                border-bottom: 1px solid #F0F0F0;
-            }
+                background-color: {COLORS['WHITE']};
+                outline: none;
+            }}
+            QListWidget::item {{
+                border-bottom: 1px solid {COLORS['GRAY_100']};
+                padding: 0;
+            }}
+            QListWidget::item:selected {{
+                background-color: {COLORS['PRIMARY_LIGHT']};
+                border-left: 4px solid {COLORS['PRIMARY']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {COLORS['GRAY_100']};
+                border-left: 4px solid {COLORS['PRIMARY']};
+            }}
         """)
         self.list_widget.itemClicked.connect(self._on_item_clicked)
         layout.addWidget(self.list_widget)
@@ -108,7 +162,7 @@ class EmpresaList(QWidget):
         for empresa in empresas:
             item = QListWidgetItem(self.list_widget)
             widget = EmpresaListItem(empresa)
-            item.setSizeHint(widget.sizeHint())
+            item.setSizeHint(QSize(200, 48))  # Fixed height for consistent look
             self.list_widget.addItem(item)
             self.list_widget.setItemWidget(item, widget)
     
