@@ -19,6 +19,9 @@ class LectorNCFApp(QMainWindow):
         super().__init__()
         self.setWindowTitle("LECTOR-NCF - Gestión de Facturas")
         
+        # Create menu bar
+        self._create_menu_bar()
+        
         # Stacked widget for navigation
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
@@ -67,3 +70,33 @@ class LectorNCFApp(QMainWindow):
         """
         self.exporter.load_empresa(empresa_id)
         self.stacked_widget.setCurrentWidget(self.exporter)
+    
+    def _create_menu_bar(self):
+        """Create menu bar"""
+        menubar = self.menuBar()
+        
+        # File menu
+        file_menu = menubar.addMenu("&Archivo")
+        exit_action = file_menu.addAction("🚪 Salir")
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        
+        # Configuration menu
+        config_menu = menubar.addMenu("&Configuración")
+        config_action = config_menu.addAction("⚙️ Configurar credenciales...")
+        config_action.triggered.connect(self._open_config_dialog)
+    
+    def _open_config_dialog(self):
+        """Open configuration dialog"""
+        from gui.dialogs.config_dialog import ConfigDialog
+        from PyQt6.QtWidgets import QDialog, QMessageBox
+        
+        dialog = ConfigDialog(self, first_time=False)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            QMessageBox.information(
+                self, 
+                "Reinicio", 
+                "La configuración ha sido guardada. La aplicación se cerrará.\n\n"
+                "Por favor, reinicie la aplicación para aplicar los cambios."
+            )
+            self.close()
