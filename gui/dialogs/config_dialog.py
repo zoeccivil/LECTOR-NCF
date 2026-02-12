@@ -323,7 +323,7 @@ class ConfigDialog(QDialog):
                 try:
                     with open(fb_creds, 'r', encoding='utf-8') as f:
                         json.load(f)
-                except:
+                except (json.JSONDecodeError, IOError, OSError):
                     errors.append("❌ Archivo de credenciales Firebase no es un JSON válido")
         else:
             warnings.append("⚠️ Credenciales Firebase no configuradas")
@@ -337,7 +337,7 @@ class ConfigDialog(QDialog):
                 try:
                     with open(gc_creds, 'r', encoding='utf-8') as f:
                         json.load(f)
-                except:
+                except (json.JSONDecodeError, IOError, OSError):
                     errors.append("❌ Archivo de credenciales Google Cloud no es un JSON válido")
         else:
             warnings.append("⚠️ Credenciales Google Cloud no configuradas")

@@ -38,7 +38,7 @@ class ConfigManager:
         try:
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except (json.JSONDecodeError, IOError, OSError):
             return self.DEFAULT_CONFIG.copy()
     
     def save(self):
@@ -46,7 +46,7 @@ class ConfigManager:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=2)
             return True
-        except:
+        except (IOError, OSError):
             return False
     
     def is_configured(self):
