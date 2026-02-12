@@ -1,342 +1,477 @@
 """
-Firebase integration handler
+Firebase integration handler - ADAPTED FOR FACOT-APP STRUCTURE
+Adapts LECTOR-NCF to work with existing /companies/ and /invoices/ collections
 """
+import os
 import firebase_admin
-from firebase_admin import credentials, firestore, db
-from typing import Optional
+from firebase_admin import credentials, firestore
+from typing import Optional, Dict, List
+from datetime import datetime
 from app.models import Invoice
 from app.utils.logger import app_logger
-from app.utils.config import settings
+
+# Import config_manager
+from gui.utils.config_manager import config_manager
 
 
 class FirebaseHandler:
-    """Handles Firebase Firestore operations"""
+    """Handles Firebase Firestore operations - Adapted for facot-app structure"""
     
     def __init__(self):
         """Initialize Firebase app"""
         try:
-            if settings.firebase_credentials:
-                cred = credentials.Certificate(settings.firebase_credentials)
+            # Read credentials from config.json
+            cred_path = config_manager.get_firebase_credentials_path()
+            db_url = config_manager.get_firebase_database_url()
+            
+            if cred_path and os.path.exists(cred_path):
+                cred = credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred, {
-                    'databaseURL': settings.firebase_database_url
+                    'databaseURL': db_url
                 })
                 self.db = firestore.client()
-                app_logger.info("Firebase initialized successfully")
+                app_logger.info("Firebase Firestore initialized successfully")
+                app_logger.info(f"Project: {config_manager.get_firebase_project_id()}")
+                app_logger.info("Using adapted structure: /companies/ and /invoices/")
             else:
                 self.db = None
                 app_logger.warning("Firebase credentials not configured")
+        except ValueError as e:
+            # Firebase app already initialized
+            app_logger.info("Firebase app already initialized, using existing instance")
+            self.db = firestore.client()
         except Exception as e:
             app_logger.error(f"Failed to initialize Firebase: {e}")
             self.db = None
     
-    def save_invoice(self, invoice: Invoice) -> bool:
-        """
-        Save invoice to Firestore
-        
-        Args:
-            invoice: Invoice object to save
-            
-        Returns:
-            True if saved successfully
-        """
-        if not self.db:
-            app_logger.warning("Firebase not initialized")
-            return False
-        
-        try:
-            # Prepare data
-            invoice_data = {
-                'ncf': invoice.ncf,
-                'rnc': invoice.rnc,
-                'razon_social': invoice.razon_social,
-                'fecha_emision': invoice.fecha_emision,
-                'fecha_procesamiento': invoice.fecha_procesamiento,
-                'montos': {
-                    'subtotal': invoice.montos.subtotal,
-                    'itbis': invoice.montos.itbis,
-                    'total': invoice.montos.total,
-                    'moneda': invoice.montos.moneda
-                },
-                'metadata': {
-                    'imagen_original': invoice.metadata.imagen_original,
-                    'confianza_ocr': invoice.metadata.confianza_ocr,
-                    'origen': invoice.metadata.origen
-                }
-            }
-            
-            # Save to Firestore
-            doc_ref = self.db.collection('facturas').document(invoice.id)
-            doc_ref.set(invoice_data)
-            
-            app_logger.info(f"Invoice saved to Firebase: {invoice.id}")
-            
-            # Update provider statistics
-            if invoice.rnc:
-                self._update_provider_stats(invoice.rnc, invoice.razon_social)
-            
-            return True
-            
-        except Exception as e:
-            app_logger.error(f"Error saving to Firebase: {e}")
-            return False
+    # ============================================================================
+    # ADAPTED METHODS FOR /companies/ collection
+    # ============================================================================
     
-    def _update_provider_stats(self, rnc: str, razon_social: Optional[str]):
-        """Update provider statistics"""
-        try:
-            provider_ref = self.db.collection('proveedores').document(rnc)
-            provider_doc = provider_ref.get()
-            
-            if provider_doc.exists:
-                # Increment counter
-                provider_ref.update({
-                    'total_facturas': firestore.Increment(1)
-                })
-            else:
-                # Create new provider
-                provider_ref.set({
-                    'rnc': rnc,
-                    'razon_social': razon_social or '',
-                    'total_facturas': 1
-                })
-                
-        except Exception as e:
-            app_logger.error(f"Error updating provider stats: {e}")
-    
-    # GUI-specific methods
-    
-    def get_empresas(self) -> list:
+    def get_empresas(self) -> List[Dict]:
         """
-        Get all empresas (companies) from Firestore
-        
-        Returns:
-            List of empresa dictionaries with id, rnc, nombre, total_facturas
+        Get companies from /companies/ collection.
+        Adapted to match LECTOR-NCF expected format.
         """
         if not self.db:
             app_logger.warning("Firebase not initialized")
             return []
         
         try:
-            empresas_ref = self.db.collection('empresas')
-            empresas = []
+            companies_ref = self.db.collection('companies')
+            docs = companies_ref.stream()
             
-            for doc in empresas_ref.stream():
-                empresa_data = doc.to_dict()
-                empresa_data['id'] = doc.id
-                empresas.append(empresa_data)
+            empresas = []
+            for doc in docs:
+                data = doc.to_dict()
+                
+                # Count invoices for this company
+                try:
+                    company_id_int = int(doc.id)
+                    invoice_count = self.db.collection('invoices') \
+                        .where('company_id', '==', company_id_int) \
+                        .count() \
+                        .get()[0][0].value
+                except:
+                    invoice_count = 0
+                
+                empresas.append({
+                    'id': f"comp_{doc.id}",  # Format: comp_1, comp_2, etc.
+                    'rnc': data.get('rnc', ''),
+                    'nombre': data.get('name', ''),
+                    'total_facturas': invoice_count,
+                    'direccion': data.get('address', ''),
+                    'telefono': data.get('phone', ''),
+                    'email': data.get('email', ''),
+                    '_original_id': doc.id  # Keep original ID for queries
+                })
             
             app_logger.info(f"Loaded {len(empresas)} empresas")
             return empresas
-            
+        
         except Exception as e:
             app_logger.error(f"Error getting empresas: {e}")
             return []
     
-    def get_facturas_by_empresa(self, empresa_id: str) -> list:
+    def get_empresa(self, empresa_id: str) -> Optional[Dict]:
         """
-        Get all facturas for a specific empresa
+        Get a specific company.
+        empresa_id format: "comp_1", "comp_2", etc.
+        """
+        if not self.db:
+            return None
         
-        Args:
-            empresa_id: Empresa document ID
+        try:
+            # Extract original ID (comp_1 -> 1)
+            original_id = empresa_id.replace('comp_', '')
             
-        Returns:
-            List of factura dictionaries
+            doc = self.db.collection('companies').document(original_id).get()
+            
+            if doc.exists:
+                data = doc.to_dict()
+                return {
+                    'id': empresa_id,
+                    'rnc': data.get('rnc', ''),
+                    'nombre': data.get('name', ''),
+                    '_original_id': original_id
+                }
+            
+            return None
+        
+        except Exception as e:
+            app_logger.error(f"Error getting empresa {empresa_id}: {e}")
+            return None
+    
+    # ============================================================================
+    # ADAPTED METHODS FOR /invoices/ collection
+    # ============================================================================
+    
+    def get_facturas_by_empresa(self, empresa_id: str) -> List[Dict]:
+        """
+        Get invoices from /invoices/ filtered by company_id.
+        empresa_id format: "comp_1", "comp_2", etc.
         """
         if not self.db:
             app_logger.warning("Firebase not initialized")
             return []
         
         try:
-            facturas_ref = self.db.collection('facturas').document(empresa_id).collection('items')
-            facturas = []
+            # Extract original company ID
+            company_id = int(empresa_id.replace('comp_', ''))
             
-            for doc in facturas_ref.stream():
-                factura_data = doc.to_dict()
-                factura_data['id'] = doc.id
-                facturas.append(factura_data)
+            # Query invoices
+            invoices_ref = self.db.collection('invoices') \
+                .where('company_id', '==', company_id) \
+                .order_by('invoice_date', direction=firestore.Query.DESCENDING) \
+                .limit(1000)  # Safety limit
+            
+            docs = invoices_ref.stream()
+            
+            facturas = []
+            for doc in docs:
+                data = doc.to_dict()
+                
+                # Parse invoice_date (can be datetime or string)
+                fecha_emision = data.get('invoice_date', '')
+                if hasattr(fecha_emision, 'strftime'):
+                    fecha_emision = fecha_emision.strftime('%Y-%m-%d')
+                elif isinstance(fecha_emision, str):
+                    # Already string, keep as is
+                    pass
+                else:
+                    fecha_emision = ''
+                
+                # Calculate subtotal (total - itbis)
+                total = float(data.get('total_amount', 0))
+                itbis = float(data.get('itbis', 0))
+                subtotal = total - itbis
+                
+                # Determine if reviewed (has category assigned)
+                revisada = data.get('invoice_category') is not None
+                
+                # Map to LECTOR-NCF format
+                factura = {
+                    'id': doc.id,
+                    'ncf': data.get('ncf', data.get('invoice_number', '')),
+                    'rnc': data.get('rnc', ''),
+                    'razon_social': data.get('third_party_name', data.get('client_name', '')),
+                    'fecha_emision': fecha_emision,
+                    'subtotal': subtotal,
+                    'itbis': itbis,
+                    'total': total,
+                    'moneda': data.get('currency', 'DOP'),
+                    'tipo_factura': data.get('invoice_type', 'Compra'),
+                    'categoria': data.get('invoice_category', ''),
+                    'imagen_original': data.get('attachment_storage_path', data.get('attachment_path', '')),
+                    'pdf_path': data.get('pdf_path', ''),
+                    'revisada': revisada,
+                    'exportada': False,  # You can add logic here if you track exports
+                    'confianza_ocr': 1.0,  # Not tracked in your system
+                    '_original_data': data  # Keep original for reference
+                }
+                
+                facturas.append(factura)
             
             app_logger.info(f"Loaded {len(facturas)} facturas for empresa {empresa_id}")
             return facturas
-            
+        
         except Exception as e:
             app_logger.error(f"Error getting facturas for empresa {empresa_id}: {e}")
             return []
     
-    def get_factura(self, empresa_id: str, factura_id: str) -> Optional[dict]:
+    def get_factura(self, empresa_id: str, factura_id: str) -> Optional[Dict]:
         """
-        Get a specific factura
-        
-        Args:
-            empresa_id: Empresa document ID
-            factura_id: Factura document ID
-            
-        Returns:
-            Factura dictionary or None
+        Get a specific invoice.
         """
         if not self.db:
-            app_logger.warning("Firebase not initialized")
             return None
         
         try:
-            factura_ref = self.db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
-            factura_doc = factura_ref.get()
+            doc = self.db.collection('invoices').document(factura_id).get()
             
-            if factura_doc.exists:
-                factura_data = factura_doc.to_dict()
-                factura_data['id'] = factura_doc.id
-                return factura_data
-            else:
-                app_logger.warning(f"Factura {factura_id} not found")
-                return None
+            if doc.exists:
+                data = doc.to_dict()
                 
+                # Parse date
+                fecha_emision = data.get('invoice_date', '')
+                if hasattr(fecha_emision, 'strftime'):
+                    fecha_emision = fecha_emision.strftime('%Y-%m-%d')
+                
+                # Calculate subtotal
+                total = float(data.get('total_amount', 0))
+                itbis = float(data.get('itbis', 0))
+                subtotal = total - itbis
+                
+                return {
+                    'id': factura_id,
+                    'ncf': data.get('ncf', data.get('invoice_number', '')),
+                    'rnc': data.get('rnc', ''),
+                    'razon_social': data.get('third_party_name', data.get('client_name', '')),
+                    'fecha_emision': fecha_emision,
+                    'subtotal': subtotal,
+                    'itbis': itbis,
+                    'total': total,
+                    'moneda': data.get('currency', 'DOP'),
+                    'tipo_factura': data.get('invoice_type', 'Compra'),
+                    'categoria': data.get('invoice_category', ''),
+                    'imagen_original': data.get('attachment_storage_path', data.get('attachment_path', '')),
+                    'pdf_path': data.get('pdf_path', ''),
+                    'revisada': data.get('invoice_category') is not None,
+                    'exportada': False,
+                    'confianza_ocr': 1.0,
+                    '_original_data': data
+                }
+            
+            return None
+        
         except Exception as e:
             app_logger.error(f"Error getting factura {factura_id}: {e}")
             return None
     
-    def update_factura(self, empresa_id: str, factura_id: str, updates: dict) -> bool:
+    # ============================================================================
+    # UPDATE METHODS
+    # ============================================================================
+    
+    def update_factura(self, empresa_id: str, factura_id: str, updates: Dict) -> bool:
         """
-        Update factura fields
-        
-        Args:
-            empresa_id: Empresa document ID
-            factura_id: Factura document ID
-            updates: Dictionary of fields to update
-            
-        Returns:
-            True if updated successfully
+        Update an invoice.
+        Maps LECTOR-NCF fields to facot-app structure.
         """
         if not self.db:
-            app_logger.warning("Firebase not initialized")
             return False
         
         try:
-            factura_ref = self.db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
-            factura_ref.update(updates)
+            # Map LECTOR-NCF fields to facot-app fields
+            facot_updates = {}
             
-            app_logger.info(f"Updated factura {factura_id}: {list(updates.keys())}")
+            if 'ncf' in updates:
+                facot_updates['ncf'] = updates['ncf']
+            
+            if 'rnc' in updates:
+                facot_updates['rnc'] = updates['rnc']
+            
+            if 'razon_social' in updates:
+                facot_updates['third_party_name'] = updates['razon_social']
+            
+            if 'fecha_emision' in updates:
+                # Convert string to datetime if needed
+                fecha = updates['fecha_emision']
+                if isinstance(fecha, str):
+                    fecha = datetime.strptime(fecha, '%Y-%m-%d')
+                facot_updates['invoice_date'] = fecha
+            
+            if 'total' in updates:
+                facot_updates['total_amount'] = float(updates['total'])
+                facot_updates['total_amount_rd'] = float(updates['total'])
+            
+            if 'itbis' in updates:
+                facot_updates['itbis'] = float(updates['itbis'])
+            
+            if 'subtotal' in updates:
+                # Subtotal is calculated, not stored separately in facot-app
+                pass
+            
+            # Add updated_at timestamp
+            facot_updates['updated_at'] = datetime.now().isoformat()
+            
+            # Update document
+            self.db.collection('invoices').document(factura_id).update(facot_updates)
+            
+            app_logger.info(f"Updated factura {factura_id}")
             return True
-            
+        
         except Exception as e:
             app_logger.error(f"Error updating factura {factura_id}: {e}")
             return False
     
     def mark_factura_revisada(self, empresa_id: str, factura_id: str) -> bool:
         """
-        Mark factura as reviewed
-        
-        Args:
-            empresa_id: Empresa document ID
-            factura_id: Factura document ID
-            
-        Returns:
-            True if updated successfully
-        """
-        return self.update_factura(empresa_id, factura_id, {'revisada': True})
-    
-    def mark_factura_exportada(self, empresa_id: str, factura_id: str) -> bool:
-        """
-        Mark factura as exported
-        
-        Args:
-            empresa_id: Empresa document ID
-            factura_id: Factura document ID
-            
-        Returns:
-            True if updated successfully
-        """
-        return self.update_factura(empresa_id, factura_id, {'exportada': True})
-    
-    def get_facturas_pendientes(self, empresa_id: str) -> list:
-        """
-        Get pending (not reviewed) facturas for an empresa
-        
-        Args:
-            empresa_id: Empresa document ID
-            
-        Returns:
-            List of pending factura dictionaries
+        Mark invoice as reviewed.
+        In facot-app, this means assigning a category if not already assigned.
         """
         if not self.db:
-            app_logger.warning("Firebase not initialized")
-            return []
-        
-        try:
-            facturas_ref = self.db.collection('facturas').document(empresa_id).collection('items')
-            facturas = []
-            
-            # Query for pending facturas (revisada == False or not set)
-            query = facturas_ref.where('revisada', '==', False)
-            
-            for doc in query.stream():
-                factura_data = doc.to_dict()
-                factura_data['id'] = doc.id
-                facturas.append(factura_data)
-            
-            app_logger.info(f"Loaded {len(facturas)} pending facturas for empresa {empresa_id}")
-            return facturas
-            
-        except Exception as e:
-            app_logger.error(f"Error getting pending facturas for empresa {empresa_id}: {e}")
-            return []
-    
-    def get_facturas_para_exportar(self, empresa_id: str) -> list:
-        """
-        Get facturas ready for export (reviewed but not exported)
-        
-        Args:
-            empresa_id: Empresa document ID
-            
-        Returns:
-            List of factura dictionaries ready for export
-        """
-        if not self.db:
-            app_logger.warning("Firebase not initialized")
-            return []
-        
-        try:
-            facturas_ref = self.db.collection('facturas').document(empresa_id).collection('items')
-            facturas = []
-            
-            # Query for reviewed but not exported facturas
-            query = facturas_ref.where('revisada', '==', True).where('exportada', '==', False)
-            
-            for doc in query.stream():
-                factura_data = doc.to_dict()
-                factura_data['id'] = doc.id
-                facturas.append(factura_data)
-            
-            app_logger.info(f"Loaded {len(facturas)} facturas ready for export for empresa {empresa_id}")
-            return facturas
-            
-        except Exception as e:
-            app_logger.error(f"Error getting facturas for export for empresa {empresa_id}: {e}")
-            return []
-    
-    def delete_factura(self, empresa_id: str, factura_id: str) -> bool:
-        """
-        Delete a factura
-        
-        Args:
-            empresa_id: Empresa document ID
-            factura_id: Factura document ID
-            
-        Returns:
-            True if deleted successfully
-        """
-        if not self.db:
-            app_logger.warning("Firebase not initialized")
             return False
         
         try:
-            factura_ref = self.db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
-            factura_ref.delete()
+            # Get current invoice
+            doc = self.db.collection('invoices').document(factura_id).get()
             
+            if doc.exists:
+                data = doc.to_dict()
+                
+                # Only update if not already categorized
+                if not data.get('invoice_category'):
+                    self.db.collection('invoices').document(factura_id).update({
+                        'invoice_category': 'Revisada',  # Or use your category system
+                        'updated_at': datetime.now().isoformat()
+                    })
+                
+                app_logger.info(f"Marked factura {factura_id} as revisada")
+                return True
+            
+            return False
+        
+        except Exception as e:
+            app_logger.error(f"Error marking factura {factura_id} as revisada: {e}")
+            return False
+    
+    def mark_factura_exportada(self, empresa_id: str, factura_id: str) -> bool:
+        """
+        Mark invoice as exported.
+        You can add an 'exportada' field to your invoices if needed.
+        """
+        if not self.db:
+            return False
+        
+        try:
+            self.db.collection('invoices').document(factura_id).update({
+                'exportada': True,
+                'exported_at': datetime.now().isoformat()
+            })
+            
+            app_logger.info(f"Marked factura {factura_id} as exportada")
+            return True
+        
+        except Exception as e:
+            app_logger.error(f"Error marking factura {factura_id} as exportada: {e}")
+            return False
+    
+    # ============================================================================
+    # FILTER METHODS
+    # ============================================================================
+    
+    def get_facturas_pendientes(self, empresa_id: str) -> List[Dict]:
+        """Get invoices that haven't been reviewed (no category assigned)."""
+        if not self.db:
+            return []
+        
+        try:
+            company_id = int(empresa_id.replace('comp_', ''))
+            
+            invoices_ref = self.db.collection('invoices') \
+                .where('company_id', '==', company_id) \
+                .where('invoice_category', '==', None) \
+                .order_by('invoice_date', direction=firestore.Query.DESCENDING)
+            
+            docs = invoices_ref.stream()
+            
+            facturas = []
+            for doc in docs:
+                data = doc.to_dict()
+                
+                fecha_emision = data.get('invoice_date', '')
+                if hasattr(fecha_emision, 'strftime'):
+                    fecha_emision = fecha_emision.strftime('%Y-%m-%d')
+                
+                total = float(data.get('total_amount', 0))
+                itbis = float(data.get('itbis', 0))
+                
+                facturas.append({
+                    'id': doc.id,
+                    'ncf': data.get('ncf', data.get('invoice_number', '')),
+                    'rnc': data.get('rnc', ''),
+                    'razon_social': data.get('third_party_name', ''),
+                    'fecha_emision': fecha_emision,
+                    'subtotal': total - itbis,
+                    'itbis': itbis,
+                    'total': total,
+                    'revisada': False,
+                    'exportada': False
+                })
+            
+            return facturas
+        
+        except Exception as e:
+            app_logger.error(f"Error getting facturas pendientes: {e}")
+            return []
+    
+    def get_facturas_para_exportar(self, empresa_id: str) -> List[Dict]:
+        """Get invoices ready for export (reviewed but not exported)."""
+        # Since we don't track 'exportada' yet, return all with category
+        if not self.db:
+            return []
+        
+        try:
+            company_id = int(empresa_id.replace('comp_', ''))
+            
+            # Get all invoices with a category (reviewed)
+            invoices_ref = self.db.collection('invoices') \
+                .where('company_id', '==', company_id) \
+                .order_by('invoice_date', direction=firestore.Query.DESCENDING)
+            
+            docs = invoices_ref.stream()
+            
+            facturas = []
+            for doc in docs:
+                data = doc.to_dict()
+                
+                # Only include if has category and not exported
+                if data.get('invoice_category') and not data.get('exportada'):
+                    fecha_emision = data.get('invoice_date', '')
+                    if hasattr(fecha_emision, 'strftime'):
+                        fecha_emision = fecha_emision.strftime('%Y-%m-%d')
+                    
+                    total = float(data.get('total_amount', 0))
+                    itbis = float(data.get('itbis', 0))
+                    
+                    facturas.append({
+                        'id': doc.id,
+                        'ncf': data.get('ncf', data.get('invoice_number', '')),
+                        'rnc': data.get('rnc', ''),
+                        'razon_social': data.get('third_party_name', ''),
+                        'fecha_emision': fecha_emision,
+                        'subtotal': total - itbis,
+                        'itbis': itbis,
+                        'total': total,
+                        'revisada': True,
+                        'exportada': False
+                    })
+            
+            return facturas
+        
+        except Exception as e:
+            app_logger.error(f"Error getting facturas para exportar: {e}")
+            return []
+    
+    # ============================================================================
+    # DELETE METHOD
+    # ============================================================================
+    
+    def delete_factura(self, empresa_id: str, factura_id: str) -> bool:
+        """Delete an invoice."""
+        if not self.db:
+            return False
+        
+        try:
+            self.db.collection('invoices').document(factura_id).delete()
             app_logger.info(f"Deleted factura {factura_id}")
             return True
-            
+        
         except Exception as e:
             app_logger.error(f"Error deleting factura {factura_id}: {e}")
             return False
     
+<<<<<<< Updated upstream
     # OCR Invoices Methods - New Collection for WhatsApp OCR Invoices
     
     def save_ocr_invoice(self, invoice_data: dict, empresa_id: int, whatsapp_msg_id: str = None) -> bool:
@@ -574,7 +709,55 @@ class FirebaseHandler:
         except Exception as e:
             app_logger.error(f"Error getting OCR facturas count for empresa {empresa_id}: {e}")
             return {'pendiente': 0, 'revisada': 0, 'exportada': 0}
+=======
+    # ============================================================================
+    # LEGACY METHODS (for future OCR integration)
+    # ============================================================================
+    
+    def save_invoice(self, invoice: Invoice, empresa_id: str) -> Optional[str]:
+        """
+        Save a new invoice (for future OCR integration).
+        This will create invoices in /invoices/ collection.
+        """
+        if not self.db:
+            return None
+        
+        try:
+            # Extract company_id from empresa_id
+            company_id = int(empresa_id.replace('comp_', ''))
+            
+            # Prepare invoice data in facot-app format
+            invoice_data = {
+                'company_id': company_id,
+                'invoice_number': invoice.ncf,
+                'ncf': invoice.ncf,
+                'rnc': invoice.rnc,
+                'third_party_name': invoice.razon_social,
+                'invoice_date': invoice.fecha_emision,
+                'total_amount': invoice.total,
+                'total_amount_rd': invoice.total,
+                'itbis': invoice.itbis,
+                'currency': 'DOP',
+                'exchange_rate': 1.0,
+                'invoice_type': 'Compra',
+                'invoice_category': None,  # Not reviewed yet
+                'attachment_storage_path': invoice.imagen_original,
+                'created_at': datetime.now().isoformat(),
+                'ocr_processed': True,  # Flag for OCR-generated invoices
+                'confianza_ocr': invoice.confianza_ocr
+            }
+            
+            # Add to Firestore
+            doc_ref = self.db.collection('invoices').add(invoice_data)
+            
+            app_logger.info(f"Saved new OCR invoice: {doc_ref[1].id}")
+            return doc_ref[1].id
+        
+        except Exception as e:
+            app_logger.error(f"Error saving OCR invoice: {e}")
+            return None
+>>>>>>> Stashed changes
 
 
-# Global Firebase handler instance
+# Create singleton instance
 firebase_handler = FirebaseHandler()
