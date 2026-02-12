@@ -1,0 +1,21 @@
+{
+  "firebase": {
+    "credentials_path": "credentials/firebase-credentials.json",
+    "project_id": "mi-proyecto-firebase",
+    "database_url": "https://mi-proyecto-default-rtdb.firebaseio.com/",
+    "storage_bucket": "mi-proyecto.appspot.com"
+  },
+  "google_cloud": {
+    "credentials_path": "credentials/google-cloud-vision.json"
+  },
+  "twilio": {
+    "account_sid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "auth_token": "tu_auth_token_aqui",
+    "whatsapp_number": "whatsapp:+14155238886"
+  },
+  "app": {
+    "data_folder": "./data",
+    "export_folder": "./data/exports",
+    "temp_folder": "./data/temp"
+  }
+}

@@ -44,6 +44,7 @@ venv.bak/
 *.json
 !firebase-example.json
 !google-cloud-example.json
+!config.json.example
 credentials/
 
 # Data
