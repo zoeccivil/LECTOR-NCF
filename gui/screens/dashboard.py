@@ -185,6 +185,27 @@ class DashboardScreen(QWidget):
         """)
         export_btn.clicked.connect(self._on_export_clicked)
         header_layout.addWidget(export_btn)
+
+        # Import button (NUEVO)
+        import_btn = QPushButton("📥 Importar")
+        import_btn.setToolTip("Importar factura manualmente con OCR")
+        import_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        import_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #10B981;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+            }
+        """)
+        import_btn.clicked.connect(self._on_import_clicked)
+        header_layout.addWidget(import_btn)
         
         return header
     
@@ -388,3 +409,49 @@ class DashboardScreen(QWidget):
         """Handle error"""
         error_msg = str(error) if error else "Error desconocido"
         QMessageBox.critical(self, "Error", f"Error: {error_msg}")
+
+
+    def _on_import_clicked(self):
+        """Handle import button click"""
+        from gui.dialogs.import_dialog import ImportInvoiceDialog
+        
+        try:
+            from app.firebase_handler import firebase_handler
+            from app.utils.logger import app_logger
+            
+            # Get empresas (returns list)
+            empresas_list = firebase_handler.get_empresas()
+            
+            if not empresas_list:
+                QMessageBox.warning(
+                    self,
+                    "Sin empresas",
+                    "No hay empresas disponibles. Carga las empresas primero."
+                )
+                return
+            
+            # Format for dialog (already in correct format)
+            empresas = []
+            for emp in empresas_list:
+                empresas.append({
+                    'id': emp.get('id', ''),
+                    'nombre': emp.get('nombre', emp.get('name', 'Sin nombre'))
+                })
+            
+            app_logger.info(f"Opening import dialog with {len(empresas)} empresas")
+            
+            # Open import dialog
+            dialog = ImportInvoiceDialog(empresas, self)
+            dialog.invoice_imported.connect(self.refresh_data)
+            dialog.exec()
+            
+        except Exception as e:
+            from app.utils.logger import app_logger
+            app_logger.error(f"Error opening import dialog: {e}")
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Error al abrir el importador:\n{str(e)}"
+            )

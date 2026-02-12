@@ -687,7 +687,36 @@ class FirebaseHandler:
             'estado': 'exportada',
             'exported_at': firestore.SERVER_TIMESTAMP
         })
-    
+
+
+    def save_ocr_invoice(self, invoice: Dict, empresa_id: str, whatsapp_msg_id: str) -> str:
+        """
+        Save OCR-processed invoice to /ocr_invoices/ collection
+        
+        Args:
+            invoice: Invoice data dict
+            empresa_id: Empresa ID
+            whatsapp_msg_id: WhatsApp message ID or manual ID
+            
+        Returns:
+            Document ID of saved invoice
+        """
+        if not self.db:
+            raise Exception("Firebase not initialized")
+        
+        try:
+            # Add to collection
+            doc_ref = self.db.collection('ocr_invoices').add(invoice)
+            doc_id = doc_ref[1].id
+            
+            app_logger.info(f"OCR invoice saved: {doc_id} (NCF: {invoice.get('ncf', 'N/A')})")
+            return doc_id
+            
+        except Exception as e:
+            app_logger.error(f"Error saving OCR invoice: {e}")
+            raise
+
+
     def delete_ocr_factura(self, factura_id: str) -> bool:
         """
         Delete an OCR invoice

@@ -1,11 +1,11 @@
 """
-Export screen - Redesigned with better styling and visibility
+Export screen - Redesigned with compact header and prominent table
 """
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
                              QCheckBox, QRadioButton, QButtonGroup, QLineEdit,
-                             QHeaderView, QMessageBox)
-from PyQt6.QtCore import pyqtSignal, Qt
+                             QHeaderView, QMessageBox, QFrame)
+from PyQt6.QtCore import pyqtSignal, Qt, QSize
 from PyQt6.QtGui import QFont, QColor
 from typing import List, Dict
 import sys
@@ -19,7 +19,7 @@ from app.export_handler import export_handler
 
 
 class ExporterScreen(QWidget):
-    """Export screen - Redesigned"""
+    """Export screen - Redesigned with compact header"""
     
     back_requested = pyqtSignal()
     
@@ -33,21 +33,39 @@ class ExporterScreen(QWidget):
     
     def _init_ui(self):
         """Initialize UI"""
-        # Main container with background
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #F9FAFB;
-            }
-        """)
+        # Main container
+        self.setStyleSheet("background-color: #F9FAFB;")
         
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(32, 32, 32, 32)
-        layout.setSpacing(24)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        # Header
-        header_layout = QHBoxLayout()
+        # Header (compact)
+        header = self._create_header()
+        layout.addWidget(header)
         
-        # Back button
+        # Table area (main focus)
+        table_container = self._create_table_container()
+        layout.addWidget(table_container, 1)  # Stretch to fill
+    
+    def _create_header(self) -> QWidget:
+        """Create compact header with all controls"""
+        header = QWidget()
+        header.setStyleSheet("""
+            QWidget {
+                background-color: #FFFFFF;
+                border-bottom: 2px solid #E5E7EB;
+            }
+        """)
+        header.setFixedHeight(140)
+        
+        header_layout = QVBoxLayout(header)
+        header_layout.setContentsMargins(32, 20, 32, 20)
+        header_layout.setSpacing(16)
+        
+        # Row 1: Title + Back button
+        row1 = QHBoxLayout()
+        
         btn_back = QPushButton("← Volver")
         btn_back.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_back.setStyleSheet("""
@@ -55,181 +73,95 @@ class ExporterScreen(QWidget):
                 background-color: transparent;
                 border: none;
                 color: #2563EB;
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 600;
-                padding: 10px 16px;
+                padding: 6px 12px;
             }
             QPushButton:hover {
                 background-color: #EFF6FF;
-                border-radius: 8px;
+                border-radius: 6px;
             }
         """)
         btn_back.clicked.connect(self.back_requested.emit)
-        header_layout.addWidget(btn_back)
+        row1.addWidget(btn_back)
         
-        header_layout.addStretch()
+        row1.addStretch()
         
-        # Title
-        title = QLabel("Exportar Facturas")
+        title = QLabel("Exportar Facturas Revisadas")
         title.setStyleSheet("""
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 700;
             color: #111827;
+            background-color: transparent;
         """)
-        header_layout.addWidget(title)
+        row1.addWidget(title)
         
-        header_layout.addStretch()
+        row1.addStretch()
         
-        layout.addLayout(header_layout)
-        
-        # Step 1: Empresa
-        step1 = self._create_step_widget(
-            "1", 
-            "Seleccionar Empresa",
-            self._create_empresa_selector()
-        )
-        layout.addWidget(step1)
-        
-        # Step 2: Facturas
-        step2 = self._create_step_widget(
-            "2",
-            "Seleccionar Facturas",
-            self._create_facturas_table()
-        )
-        layout.addWidget(step2)
-        
-        # Step 3: Formato
-        step3 = self._create_step_widget(
-            "3",
-            "Configuración de Exportación",
-            self._create_format_selector()
-        )
-        layout.addWidget(step3)
-        
-        # Step 4: Summary
-        step4 = self._create_step_widget(
-            "4",
-            "Resumen y Exportar",
-            self._create_summary()
-        )
-        layout.addWidget(step4)
-        
-        layout.addStretch()
-        
-        # Export button
-        self.btn_export = QPushButton("📤 EXPORTAR AHORA")
+        # Export button (icon style)
+        self.btn_export = QPushButton("📤")
+        self.btn_export.setToolTip("Exportar facturas seleccionadas")
         self.btn_export.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_export.setMinimumHeight(56)
+        self.btn_export.setFixedSize(48, 48)
         self.btn_export.setStyleSheet("""
             QPushButton {
                 background-color: #2563EB;
                 color: #FFFFFF;
                 border: none;
-                border-radius: 10px;
-                font-size: 16px;
-                font-weight: 700;
-                letter-spacing: 0.5px;
+                border-radius: 24px;
+                font-size: 20px;
             }
             QPushButton:hover {
                 background-color: #1E40AF;
             }
             QPushButton:disabled {
-                background-color: #9CA3AF;
+                background-color: #D1D5DB;
             }
         """)
         self.btn_export.clicked.connect(self._on_export)
-        layout.addWidget(self.btn_export)
-    
-    def _create_step_widget(self, number: str, title: str, content: QWidget) -> QWidget:
-        """Create step container"""
-        container = QWidget()
-        container.setStyleSheet("""
-            QWidget {
-                background-color: #FFFFFF;
-                border: 1px solid #E5E7EB;
-                border-radius: 12px;
-            }
-        """)
+        self.btn_export.setEnabled(False)
+        row1.addWidget(self.btn_export)
         
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(20)
+        header_layout.addLayout(row1)
         
-        # Step header
-        header_layout = QHBoxLayout()
+        # Row 2: Empresa + Format + Summary (compact)
+        row2 = QHBoxLayout()
+        row2.setSpacing(32)
         
-        # Step number badge
-        badge = QLabel(number)
-        badge.setFixedSize(36, 36)
-        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        badge.setStyleSheet("""
-            background-color: #2563EB;
-            color: #FFFFFF;
-            border-radius: 18px;
-            font-size: 18px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(badge)
+        # Empresa selector (compact)
+        empresa_container = QWidget()
+        empresa_container.setStyleSheet("background-color: transparent;")
+        empresa_layout = QHBoxLayout(empresa_container)
+        empresa_layout.setContentsMargins(0, 0, 0, 0)
+        empresa_layout.setSpacing(8)
         
-        # Step title
-        step_title = QLabel(title)
-        step_title.setStyleSheet("""
-            font-size: 20px;
-            font-weight: 600;
-            color: #111827;
-            margin-left: 4px;
-        """)
-        header_layout.addWidget(step_title)
-        header_layout.addStretch()
-        
-        layout.addLayout(header_layout)
-        layout.addWidget(content)
-        
-        return container
-    
-    def _create_empresa_selector(self) -> QWidget:
-        """Create empresa selector"""
-        widget = QWidget()
-        widget.setStyleSheet("background-color: transparent;")
-        
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-        
-        label = QLabel("Empresa:")
-        label.setStyleSheet("""
-            font-size: 14px;
-            color: #374151;
-            font-weight: 600;
+        emp_label = QLabel("Empresa:")
+        emp_label.setStyleSheet("""
+            font-size: 13px;
+            color: #6B7280;
+            font-weight: 500;
             background-color: transparent;
         """)
-        layout.addWidget(label)
+        empresa_layout.addWidget(emp_label)
         
         self.empresa_combo = QComboBox()
-        self.empresa_combo.setMinimumHeight(44)
+        self.empresa_combo.setMinimumWidth(220)
+        self.empresa_combo.setFixedHeight(36)
         self.empresa_combo.setStyleSheet("""
             QComboBox {
                 border: 1px solid #D1D5DB;
-                border-radius: 8px;
-                padding: 10px 14px;
+                border-radius: 6px;
+                padding: 6px 12px;
                 background-color: #FFFFFF;
-                font-size: 14px;
+                font-size: 13px;
                 color: #111827;
             }
             QComboBox:hover {
                 border-color: #9CA3AF;
             }
-            QComboBox::drop-down {
-                border: none;
-                width: 30px;
-                background-color: transparent;
-            }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 6px solid #6B7280;
-                margin-right: 10px;
+            QComboBox:disabled {
+                background-color: #F3F4F6;
+                color: #6B7280;
             }
             QComboBox QAbstractItemView {
                 background-color: #FFFFFF;
@@ -238,72 +170,161 @@ class ExporterScreen(QWidget):
                 selection-background-color: #EFF6FF;
                 selection-color: #2563EB;
                 color: #111827;
-                padding: 4px;
             }
             QComboBox QAbstractItemView::item {
                 min-height: 32px;
                 padding: 6px 12px;
-                color: #111827;
-                background-color: #FFFFFF;
-            }
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #F3F4F6;
-                color: #111827;
-            }
-            QComboBox QAbstractItemView::item:selected {
-                background-color: #EFF6FF;
-                color: #2563EB;
             }
         """)
         self.empresa_combo.currentIndexChanged.connect(self._on_empresa_changed)
-        layout.addWidget(self.empresa_combo)
+        empresa_layout.addWidget(self.empresa_combo)
         
-        return widget
+        row2.addWidget(empresa_container)
+        
+        # Separator
+        sep1 = QFrame()
+        sep1.setFrameShape(QFrame.Shape.VLine)
+        sep1.setStyleSheet("background-color: #E5E7EB;")
+        sep1.setFixedWidth(1)
+        row2.addWidget(sep1)
+        
+        # Format selector (compact)
+        format_container = QWidget()
+        format_container.setStyleSheet("background-color: transparent;")
+        format_layout = QHBoxLayout(format_container)
+        format_layout.setContentsMargins(0, 0, 0, 0)
+        format_layout.setSpacing(12)
+        
+        fmt_label = QLabel("Formato:")
+        fmt_label.setStyleSheet("""
+            font-size: 13px;
+            color: #6B7280;
+            font-weight: 500;
+            background-color: transparent;
+        """)
+        format_layout.addWidget(fmt_label)
+        
+        self.format_group = QButtonGroup()
+        
+        self.radio_csv = QRadioButton("CSV")
+        self.radio_csv.setChecked(True)
+        self.radio_csv.setStyleSheet("""
+            QRadioButton {
+                font-size: 13px;
+                color: #111827;
+                background-color: transparent;
+            }
+        """)
+        self.format_group.addButton(self.radio_csv)
+        format_layout.addWidget(self.radio_csv)
+        
+        self.radio_json = QRadioButton("JSON")
+        self.radio_json.setStyleSheet("""
+            QRadioButton {
+                font-size: 13px;
+                color: #111827;
+                background-color: transparent;
+            }
+        """)
+        self.format_group.addButton(self.radio_json)
+        format_layout.addWidget(self.radio_json)
+        
+        self.radio_both = QRadioButton("Ambos")
+        self.radio_both.setStyleSheet("""
+            QRadioButton {
+                font-size: 13px;
+                color: #111827;
+                background-color: transparent;
+            }
+        """)
+        self.format_group.addButton(self.radio_both)
+        format_layout.addWidget(self.radio_both)
+        
+        row2.addWidget(format_container)
+        
+        # Separator
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.Shape.VLine)
+        sep2.setStyleSheet("background-color: #E5E7EB;")
+        sep2.setFixedWidth(1)
+        row2.addWidget(sep2)
+        
+        # Summary (compact)
+        summary_container = QWidget()
+        summary_container.setStyleSheet("background-color: transparent;")
+        summary_layout = QVBoxLayout(summary_container)
+        summary_layout.setContentsMargins(0, 0, 0, 0)
+        summary_layout.setSpacing(2)
+        
+        self.lbl_count = QLabel("Seleccionadas: 0")
+        self.lbl_count.setStyleSheet("""
+            font-size: 13px;
+            color: #111827;
+            font-weight: 600;
+            background-color: transparent;
+        """)
+        summary_layout.addWidget(self.lbl_count)
+        
+        self.lbl_total = QLabel("Total: DOP 0.00")
+        self.lbl_total.setStyleSheet("""
+            font-size: 13px;
+            color: #2563EB;
+            font-weight: 700;
+            background-color: transparent;
+        """)
+        summary_layout.addWidget(self.lbl_total)
+        
+        row2.addWidget(summary_container)
+        
+        row2.addStretch()
+        
+        # Mark as exported checkbox
+        self.chk_mark_exported = QCheckBox("Marcar como exportadas")
+        self.chk_mark_exported.setChecked(True)
+        self.chk_mark_exported.setStyleSheet("""
+            QCheckBox {
+                font-size: 13px;
+                color: #374151;
+                background-color: transparent;
+            }
+        """)
+        row2.addWidget(self.chk_mark_exported)
+        
+        header_layout.addLayout(row2)
+        
+        return header
     
-    def _create_facturas_table(self) -> QWidget:
-        """Create facturas table"""
-        widget = QWidget()
-        widget.setStyleSheet("background-color: transparent;")
+    def _create_table_container(self) -> QWidget:
+        """Create main table container"""
+        container = QWidget()
+        container.setStyleSheet("background-color: transparent;")
         
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(32, 24, 32, 32)
+        layout.setSpacing(16)
         
-        # ✅ AGREGAR INDICADOR
-        info_label = QLabel("✓ Solo facturas REVISADAS (listas para exportar)")
-        info_label.setStyleSheet("""
+        # Info banner
+        info_banner = QLabel("✓ Solo facturas REVISADAS (listas para exportar)")
+        info_banner.setStyleSheet("""
             background-color: #D1FAE5;
             color: #065F46;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
             border: 1px solid #10B981;
         """)
-        layout.addWidget(info_label)
+        layout.addWidget(info_banner)
         
-        # Select all + Search
+        # Search + Select All
         controls_layout = QHBoxLayout()
-        
         
         self.chk_select_all = QCheckBox("Seleccionar Todas")
         self.chk_select_all.setStyleSheet("""
             QCheckBox {
                 font-size: 14px;
-                color: #374151;
+                color: #111827;
                 font-weight: 600;
-                background-color: transparent;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #D1D5DB;
-                border-radius: 4px;
-                background-color: #FFFFFF;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #2563EB;
-                border-color: #2563EB;
             }
         """)
         self.chk_select_all.stateChanged.connect(self._on_select_all)
@@ -312,12 +333,12 @@ class ExporterScreen(QWidget):
         controls_layout.addStretch()
         
         search_box = QLineEdit()
-        search_box.setPlaceholderText("🔍 Buscar por NCF...")
-        search_box.setMinimumWidth(280)
-        search_box.setMinimumHeight(40)
+        search_box.setPlaceholderText("🔍 Buscar por NCF, RNC o Razón Social...")
+        search_box.setMinimumWidth(320)
+        search_box.setFixedHeight(40)
         search_box.setStyleSheet("""
             QLineEdit {
-                padding: 10px 14px;
+                padding: 10px 16px;
                 border: 1px solid #D1D5DB;
                 border-radius: 8px;
                 font-size: 14px;
@@ -335,13 +356,15 @@ class ExporterScreen(QWidget):
         
         # Table
         self.facturas_table = QTableWidget()
-        self.facturas_table.setColumnCount(6)
-        self.facturas_table.setHorizontalHeaderLabels(['☑', 'NCF', 'RNC', 'RAZÓN SOCIAL', 'FECHA', 'TOTAL'])
+        self.facturas_table.setColumnCount(8)  # ✅ 8 columnas (agregamos TOTAL)
+        self.facturas_table.setHorizontalHeaderLabels([
+            '☑', 'NCF', 'RNC', 'RAZÓN SOCIAL', 'FECHA', 'SUBTOTAL', 'ITBIS', 'TOTAL'
+        ])
         self.facturas_table.verticalHeader().setVisible(False)
         self.facturas_table.setAlternatingRowColors(True)
         self.facturas_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.facturas_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.facturas_table.verticalHeader().setDefaultSectionSize(48)
+        self.facturas_table.verticalHeader().setDefaultSectionSize(52)
         
         # Headers
         header = self.facturas_table.horizontalHeader()
@@ -351,6 +374,8 @@ class ExporterScreen(QWidget):
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)
         
         self.facturas_table.setColumnWidth(0, 60)
         
@@ -359,13 +384,13 @@ class ExporterScreen(QWidget):
             QTableWidget {
                 background-color: #FFFFFF;
                 border: 1px solid #E5E7EB;
-                border-radius: 8px;
+                border-radius: 10px;
                 gridline-color: #F3F4F6;
             }
             QTableWidget::item {
-                padding: 10px 12px;
+                padding: 12px;
                 color: #111827;
-                font-size: 13px;
+                font-size: 14px;
                 border-bottom: 1px solid #F3F4F6;
             }
             QTableWidget::item:selected {
@@ -375,7 +400,7 @@ class ExporterScreen(QWidget):
             QHeaderView::section {
                 background-color: #F9FAFB;
                 color: #374151;
-                padding: 12px 10px;
+                padding: 14px 12px;
                 border: none;
                 border-bottom: 2px solid #E5E7EB;
                 font-weight: 600;
@@ -390,156 +415,7 @@ class ExporterScreen(QWidget):
         
         layout.addWidget(self.facturas_table)
         
-        return widget
-    
-    def _create_format_selector(self) -> QWidget:
-        """Create format selector"""
-        widget = QWidget()
-        widget.setStyleSheet("background-color: transparent;")
-        
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(16)
-        
-        # Format label
-        format_label = QLabel("Formato:")
-        format_label.setStyleSheet("""
-            font-size: 14px;
-            color: #374151;
-            font-weight: 600;
-            background-color: transparent;
-        """)
-        layout.addWidget(format_label)
-        
-        # Radio buttons
-        format_layout = QHBoxLayout()
-        
-        self.format_group = QButtonGroup()
-        
-        self.radio_csv = QRadioButton("CSV")
-        self.radio_csv.setChecked(True)
-        self.radio_csv.setStyleSheet("""
-            QRadioButton {
-                font-size: 14px;
-                color: #111827;
-                background-color: transparent;
-            }
-            QRadioButton::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #D1D5DB;
-                border-radius: 9px;
-                background-color: #FFFFFF;
-            }
-            QRadioButton::indicator:checked {
-                background-color: #2563EB;
-                border-color: #2563EB;
-            }
-        """)
-        self.format_group.addButton(self.radio_csv)
-        format_layout.addWidget(self.radio_csv)
-        
-        self.radio_json = QRadioButton("JSON")
-        self.radio_json.setStyleSheet("""
-            QRadioButton {
-                font-size: 14px;
-                color: #111827;
-                background-color: transparent;
-            }
-            QRadioButton::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #D1D5DB;
-                border-radius: 9px;
-                background-color: #FFFFFF;
-            }
-            QRadioButton::indicator:checked {
-                background-color: #2563EB;
-                border-color: #2563EB;
-            }
-        """)
-        self.format_group.addButton(self.radio_json)
-        format_layout.addWidget(self.radio_json)
-        
-        self.radio_both = QRadioButton("Ambos")
-        self.radio_both.setStyleSheet("""
-            QRadioButton {
-                font-size: 14px;
-                color: #111827;
-                background-color: transparent;
-            }
-            QRadioButton::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #D1D5DB;
-                border-radius: 9px;
-                background-color: #FFFFFF;
-            }
-            QRadioButton::indicator:checked {
-                background-color: #2563EB;
-                border-color: #2563EB;
-            }
-        """)
-        self.format_group.addButton(self.radio_both)
-        format_layout.addWidget(self.radio_both)
-        
-        format_layout.addStretch()
-        
-        layout.addLayout(format_layout)
-        
-        # Mark exported checkbox
-        self.chk_mark_exported = QCheckBox("Marcar como exportadas después")
-        self.chk_mark_exported.setChecked(True)
-        self.chk_mark_exported.setStyleSheet("""
-            QCheckBox {
-                font-size: 14px;
-                color: #374151;
-                background-color: transparent;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #D1D5DB;
-                border-radius: 4px;
-                background-color: #FFFFFF;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #2563EB;
-                border-color: #2563EB;
-            }
-        """)
-        layout.addWidget(self.chk_mark_exported)
-        
-        return widget
-    
-    def _create_summary(self) -> QWidget:
-        """Create summary widget"""
-        widget = QWidget()
-        widget.setStyleSheet("background-color: transparent;")
-        
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
-        
-        self.lbl_count = QLabel("Facturas seleccionadas: 0")
-        self.lbl_count.setStyleSheet("""
-            font-size: 16px;
-            color: #111827;
-            font-weight: 600;
-            background-color: transparent;
-        """)
-        layout.addWidget(self.lbl_count)
-        
-        self.lbl_total = QLabel("Total monto: DOP 0.00")
-        self.lbl_total.setStyleSheet("""
-            font-size: 16px;
-            color: #111827;
-            font-weight: 600;
-            background-color: transparent;
-        """)
-        layout.addWidget(self.lbl_total)
-        
-        return widget
+        return container
     
     def load_empresas(self):
         """Load empresas"""
@@ -548,59 +424,46 @@ class ExporterScreen(QWidget):
             on_success=self._on_empresas_loaded,
             on_error=lambda e: QMessageBox.critical(self, "Error", str(e))
         )
-
+    
     def load_for_empresa(self, empresa_id: str):
-        """
-        Load exporter in automatic mode for specific empresa.
-        Pre-loads only reviewed invoices ready for export.
-        """
-        # First load all empresas
+        """Load exporter in automatic mode for specific empresa"""
         self.worker_pool.execute(
             firebase_handler.get_empresas,
             on_success=lambda empresas: self._on_empresas_loaded_auto(empresas, empresa_id),
             on_error=lambda e: QMessageBox.critical(self, "Error", str(e))
         )
-
-    def _on_empresas_loaded_auto(self, empresas, empresa_id: str):
-        """Handle empresas loaded in auto mode"""
-        self.empresas = empresas
-        self.empresa_combo.clear()
-        
-        # Populate combo
-        for emp in empresas:
-            self.empresa_combo.addItem(emp['nombre'], emp['id'])
-        
-        # Pre-select empresa
-        for i in range(self.empresa_combo.count()):
-            if self.empresa_combo.itemData(i) == empresa_id:
-                self.empresa_combo.setCurrentIndex(i)
-                break
-        
-        # Disable empresa selector (locked to this empresa)
-        self.empresa_combo.setEnabled(False)
-        self.empresa_combo.setStyleSheet(self.empresa_combo.styleSheet() + """
-            QComboBox:disabled {
-                background-color: #F3F4F6;
-                color: #6B7280;
-            }
-        """)
-
-    def set_empresa(self, empresa_id: str):
-        """Pre-select empresa in combo box"""
-        for i in range(self.empresa_combo.count()):
-            if self.empresa_combo.itemData(i) == empresa_id:
-                self.empresa_combo.setCurrentIndex(i)
-                break
-
+    
     def _on_empresas_loaded(self, empresas):
         """Handle empresas loaded"""
         self.empresas = empresas
         self.empresa_combo.clear()
         for emp in empresas:
             self.empresa_combo.addItem(emp['nombre'], emp['id'])
-
-
+    
+    def _on_empresas_loaded_auto(self, empresas, empresa_id: str):
+        """Handle empresas loaded in auto mode"""
+        self.empresas = empresas
+        self.empresa_combo.clear()
         
+        for emp in empresas:
+            self.empresa_combo.addItem(emp['nombre'], emp['id'])
+        
+        # ✅ Pre-select empresa pero NO bloquear (permitir cambiar)
+        for i in range(self.empresa_combo.count()):
+            if self.empresa_combo.itemData(i) == empresa_id:
+                self.empresa_combo.setCurrentIndex(i)
+                break
+        
+        # ✅ NO DESHABILITAR - permitir cambio de empresa
+        # self.empresa_combo.setEnabled(False)  ← ELIMINAR ESTA LÍNEA
+    
+    def set_empresa(self, empresa_id: str):
+        """Pre-select empresa"""
+        for i in range(self.empresa_combo.count()):
+            if self.empresa_combo.itemData(i) == empresa_id:
+                self.empresa_combo.setCurrentIndex(i)
+                break
+    
     def _on_empresa_changed(self, index):
         """Handle empresa changed"""
         if index < 0:
@@ -611,15 +474,13 @@ class ExporterScreen(QWidget):
             self._load_facturas(empresa_id)
     
     def _load_facturas(self, empresa_id):
-        """Load facturas for empresa - ONLY REVIEWED invoices"""
+        """Load facturas for empresa - ONLY REVIEWED"""
         if hasattr(firebase_handler, 'get_ocr_facturas_by_empresa'):
-            # ✅ SOLO facturas revisadas (listas para exportar)
             fetch_func = lambda: firebase_handler.get_ocr_facturas_by_empresa(
                 empresa_id, 
                 estado='revisada'
             )
         else:
-            # Fallback para sistema legacy
             fetch_func = lambda: firebase_handler.get_facturas_para_exportar(empresa_id)
         
         self.worker_pool.execute(
@@ -644,19 +505,6 @@ class ExporterScreen(QWidget):
             # Checkbox
             chk = QCheckBox()
             chk.setProperty('factura_id', factura['id'])
-            chk.setStyleSheet("""
-                QCheckBox::indicator {
-                    width: 18px;
-                    height: 18px;
-                    border: 2px solid #D1D5DB;
-                    border-radius: 4px;
-                    background-color: #FFFFFF;
-                }
-                QCheckBox::indicator:checked {
-                    background-color: #2563EB;
-                    border-color: #2563EB;
-                }
-            """)
             chk.stateChanged.connect(self._update_summary)
             chk_widget = QWidget()
             chk_widget.setStyleSheet("background-color: transparent;")
@@ -689,14 +537,29 @@ class ExporterScreen(QWidget):
             fecha_item.setForeground(QColor('#111827'))
             self.facturas_table.setItem(row, 4, fecha_item)
             
-            # Total
-            total = factura.get('total', 0)
+            # Subtotal
+            subtotal = float(factura.get('subtotal', 0))
+            subtotal_item = QTableWidgetItem(f"DOP {subtotal:,.2f}")
+            subtotal_item.setForeground(QColor('#6B7280'))
+            subtotal_item.setData(Qt.ItemDataRole.UserRole, subtotal)  # ✅ Guardar valor numérico
+            self.facturas_table.setItem(row, 5, subtotal_item)
+            
+            # ITBIS
+            itbis = float(factura.get('itbis', 0))
+            itbis_item = QTableWidgetItem(f"DOP {itbis:,.2f}")
+            itbis_item.setForeground(QColor('#EA580C'))
+            itbis_item.setData(Qt.ItemDataRole.UserRole, itbis)  # ✅ Guardar valor numérico
+            self.facturas_table.setItem(row, 6, itbis_item)
+            
+            # ✅ TOTAL (columna 7)
+            total = float(factura.get('total', 0))
             total_item = QTableWidgetItem(f"DOP {total:,.2f}")
             total_item.setForeground(QColor('#111827'))
+            total_item.setData(Qt.ItemDataRole.UserRole, total)  # ✅ Guardar valor numérico
             font_total = total_item.font()
             font_total.setWeight(QFont.Weight.Bold)
             total_item.setFont(font_total)
-            self.facturas_table.setItem(row, 5, total_item)
+            self.facturas_table.setItem(row, 7, total_item)
         
         self._update_summary()
     
@@ -714,9 +577,21 @@ class ExporterScreen(QWidget):
         search = text.lower()
         for row in range(self.facturas_table.rowCount()):
             ncf_item = self.facturas_table.item(row, 1)
-            if ncf_item:
-                show = search in ncf_item.text().lower()
-                self.facturas_table.setRowHidden(row, not show and len(search) > 0)
+            rnc_item = self.facturas_table.item(row, 2)
+            razon_item = self.facturas_table.item(row, 3)
+            
+            show = False
+            if ncf_item and search in ncf_item.text().lower():
+                show = True
+            elif rnc_item and search in rnc_item.text().lower():
+                show = True
+            elif razon_item and search in razon_item.text().lower():
+                show = True
+            
+            if not search:
+                show = True
+            
+            self.facturas_table.setRowHidden(row, not show)
     
     def _update_summary(self):
         """Update summary"""
@@ -729,23 +604,21 @@ class ExporterScreen(QWidget):
                 chk = chk_widget.findChild(QCheckBox)
                 if chk and chk.isChecked():
                     count += 1
-                    # Get total from table
-                    total_item = self.facturas_table.item(row, 5)
+                    # ✅ Obtener total de la columna 7 (usando UserRole)
+                    total_item = self.facturas_table.item(row, 7)
                     if total_item:
-                        total_text = total_item.text().replace('DOP', '').replace(',', '').strip()
-                        try:
-                            total += float(total_text)
-                        except:
-                            pass
+                        # Usar el valor numérico guardado
+                        total_value = total_item.data(Qt.ItemDataRole.UserRole)
+                        if total_value is not None:
+                            total += float(total_value)
         
-        self.lbl_count.setText(f"Facturas seleccionadas: {count}")
-        self.lbl_total.setText(f"Total monto: DOP {total:,.2f}")
+        self.lbl_count.setText(f"Seleccionadas: {count}")
+        self.lbl_total.setText(f"Total: DOP {total:,.2f}")
         
         self.btn_export.setEnabled(count > 0)
     
     def _on_export(self):
         """Handle export"""
-        # Get selected facturas
         selected = []
         for row in range(self.facturas_table.rowCount()):
             chk_widget = self.facturas_table.cellWidget(row, 0)
@@ -755,13 +628,11 @@ class ExporterScreen(QWidget):
                     factura_id = chk.property('factura_id')
                     factura = next((f for f in self.facturas if f['id'] == factura_id), None)
                     if factura:
-                        # ✅ Validar que esté revisada
                         if factura.get('estado') != 'revisada':
                             QMessageBox.warning(
                                 self,
                                 "Factura no revisada",
-                                f"La factura {factura.get('ncf', 'N/A')} no está revisada.\n\n"
-                                "Solo se pueden exportar facturas revisadas."
+                                f"La factura {factura.get('ncf', 'N/A')} no está revisada."
                             )
                             return
                         selected.append(factura)
@@ -770,15 +641,12 @@ class ExporterScreen(QWidget):
             QMessageBox.warning(self, "Advertencia", "No hay facturas seleccionadas")
             return
         
-        
-        # Get format
         format_type = 'csv'
         if self.radio_json.isChecked():
             format_type = 'json'
         elif self.radio_both.isChecked():
             format_type = 'both'
         
-        # Export
         try:
             empresa_id = self.empresa_combo.currentData()
             result = export_handler.export_facturas(
@@ -790,10 +658,10 @@ class ExporterScreen(QWidget):
             QMessageBox.information(
                 self,
                 "Éxito",
-                f"Facturas exportadas correctamente:\n{result['file_path']}"
+                f"✓ {len(selected)} facturas exportadas correctamente\n\n"
+                f"Archivo: {result['file_path']}"
             )
             
-            # Mark as exported if checkbox is checked
             if self.chk_mark_exported.isChecked():
                 for factura in selected:
                     if hasattr(firebase_handler, 'mark_ocr_factura_exportada'):
