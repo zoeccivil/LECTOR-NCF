@@ -33,12 +33,101 @@ class ConfigDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("⚙️ Configuración de LECTOR-NCF")
         self.setModal(True)
-        self.setMinimumSize(700, 600)
+        self.setMinimumSize(750, 650)
         
         self.first_time = first_time
         
+        # ✅ Stylesheet global mejorado
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #FFFFFF;
+            }
+            QWidget {
+                background-color: transparent;
+                color: #111827;
+            }
+            QLabel {
+                background-color: transparent;
+                color: #111827;
+            }
+            QTabWidget::pane {
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+                background-color: #FFFFFF;
+                top: -1px;
+            }
+            QTabBar::tab {
+                background-color: #F9FAFB;
+                color: #6B7280;
+                border: 1px solid #E5E7EB;
+                border-bottom: none;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                padding: 12px 24px;
+                margin-right: 4px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            QTabBar::tab:selected {
+                background-color: #FFFFFF;
+                color: #2563EB;
+                border-bottom: 2px solid #2563EB;
+            }
+            QTabBar::tab:hover {
+                background-color: #F3F4F6;
+                color: #111827;
+            }
+            QGroupBox {
+                background-color: #F9FAFB;
+                border: 2px solid #E5E7EB;
+                border-radius: 8px;
+                margin-top: 12px;
+                padding-top: 16px;
+                font-weight: 600;
+                color: #111827;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 12px;
+                padding: 0 8px;
+                background-color: #FFFFFF;
+                color: #111827;
+            }
+            QLineEdit {
+                background-color: #FFFFFF;
+                color: #111827;
+                border: 2px solid #E5E7EB;
+                border-radius: 6px;
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border-color: #2563EB;
+                background-color: #F0F9FF;
+            }
+            QLineEdit:read-only {
+                background-color: #F3F4F6;
+                color: #6B7280;
+            }
+            QCheckBox {
+                color: #111827;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border: 2px solid #E5E7EB;
+                border-radius: 4px;
+                background-color: #FFFFFF;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #2563EB;
+                border-color: #2563EB;
+            }
+        """)
+        
         self._init_ui()
-        self._load_existing_config()
     
     def _init_ui(self):
         """Construye la interfaz del diálogo."""
@@ -177,10 +266,10 @@ class ConfigDialog(QDialog):
         group.setLayout(group_layout)
         layout.addWidget(group)
         
-        # Hint
+        # ✅ Hint mejorado
         hint = QLabel(
             "💡 Estas credenciales se usan para el servicio de OCR (Google Cloud Vision API).\n"
-            "Puedes usar el mismo archivo de Firebase si tiene los permisos necesarios."
+            "Si dejas este campo vacío, se usarán las credenciales de Firebase automáticamente."
         )
         hint.setWordWrap(True)
         hint.setStyleSheet("color: #757575; font-size: 11px;")
@@ -220,7 +309,7 @@ class ConfigDialog(QDialog):
         
         # WhatsApp Number
         self.twilio_number_edit = QLineEdit()
-        self.twilio_number_edit.setPlaceholderText("whatsapp:+14155238886")
+        self.twilio_number_edit.setPlaceholderText("+18035909613")
         group_layout.addRow("WhatsApp Number:", self.twilio_number_edit)
         
         group.setLayout(group_layout)
@@ -287,8 +376,9 @@ class ConfigDialog(QDialog):
         self.firebase_bucket_edit.setText(config_manager.get_firebase_storage_bucket())
         self.firebase_project_id_edit.setText(config_manager.get_firebase_project_id())
         
-        # Google Cloud
-        self.google_cloud_cred_edit.setText(config_manager.get_google_cloud_credentials_path())
+        # ✅ Google Cloud (muestra credenciales específicas si existen)
+        gc_path = config_manager.config.get("google_cloud", {}).get("credentials_path", "")
+        self.google_cloud_cred_edit.setText(gc_path)
         
         # Twilio
         self.twilio_sid_edit.setText(config_manager.get_twilio_account_sid())
@@ -421,10 +511,10 @@ class ConfigDialog(QDialog):
         if not self.firebase_db_url_edit.text().strip():
             errors.append("❌ Database URL de Firebase vacía")
         
-        # Validar Google Cloud (OBLIGATORIO)
+        # Validar Google Cloud (OPCIONAL con warning)
         gc_cred = self.google_cloud_cred_edit.text().strip()
         if not gc_cred:
-            warnings.append("⚠️ No se configuraron credenciales de Google Cloud (se usarán las de Firebase)")
+            warnings.append("⚠️ No se configuraron credenciales de Google Cloud\n   (se usarán las de Firebase automáticamente)")
         elif not os.path.exists(gc_cred):
             errors.append("❌ El archivo de credenciales de Google Cloud no existe")
         
@@ -487,10 +577,18 @@ class ConfigDialog(QDialog):
             self.firebase_bucket_edit.text().strip()
         )
         
-        # Google Cloud (usar Firebase si está vacío)
+        # ✅ Google Cloud (usar Firebase si está vacío)
         gc_cred = self.google_cloud_cred_edit.text().strip()
         if not gc_cred:
             gc_cred = firebase_cred
+            QMessageBox.information(
+                self,
+                "ℹ️ Credenciales compartidas",
+                "No se configuraron credenciales específicas de Google Cloud.\n\n"
+                "Se usarán las credenciales de Firebase para OCR.",
+                QMessageBox.StandardButton.Ok
+            )
+        
         config_manager.update_google_cloud_config(gc_cred)
         
         # Twilio (opcional)

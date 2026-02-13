@@ -1,0 +1,2 @@
+# En la raíz del proyecto
+echo python-3.11.9 > runtime.txt

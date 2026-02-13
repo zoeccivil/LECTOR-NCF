@@ -16,14 +16,19 @@ class OCRProcessor:
     def __init__(self):
         """Initialize Google Cloud Vision client"""
         try:
-            # Set credentials from config
-            if settings.google_application_credentials and os.path.exists(settings.google_application_credentials):
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = settings.google_application_credentials
+            # ✅ Set credentials from config (supports google_cloud.credentials_path)
+            creds_path = settings.google_application_credentials
+            
+            if creds_path and os.path.exists(creds_path):
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
+                app_logger.info(f"Using Google Cloud credentials: {creds_path}")
+            else:
+                app_logger.warning(f"Credentials file not found: {creds_path}")
             
             self.client = vision.ImageAnnotatorClient()
-            app_logger.info("Google Cloud Vision client initialized successfully")
+            app_logger.info("✅ Google Cloud Vision client initialized successfully")
         except Exception as e:
-            app_logger.error(f"Failed to initialize Google Cloud Vision client: {e}")
+            app_logger.error(f"❌ Failed to initialize Google Cloud Vision client: {e}")
             self.client = None
     
     def extract_text_from_image(self, image_bytes: bytes) -> Tuple[Optional[str], Optional[float]]:
@@ -168,7 +173,7 @@ class OCRProcessor:
             return self.extract_text_from_image(image_bytes)
     
     # ============================================
-    # NUEVA FUNCIONALIDAD: Extracción de Campos
+    # EXTRACCIÓN DE CAMPOS ESTRUCTURADOS
     # ============================================
     
     def extract_invoice_data(self, image_bytes: bytes) -> Dict:
@@ -181,11 +186,25 @@ class OCRProcessor:
         Returns:
             Dict with extracted invoice fields
         """
+        # ✅ Validación mejorada (sin modo MOCK)
+        if not self.client:
+            raise Exception(
+                "❌ Google Cloud Vision client not initialized.\n\n"
+                "Verifica que:\n"
+                "1. El archivo de credenciales existe\n"
+                "2. config.json tiene 'google_cloud.credentials_path' configurado\n"
+                "3. La API de Vision está habilitada en Google Cloud Console\n\n"
+                f"Ruta configurada: {settings.google_application_credentials}"
+            )
+        
         # Get OCR text
+        app_logger.info("Processing image with Google Cloud Vision...")
         full_text, confidence = self.process_invoice_image(image_bytes)
         
         if not full_text:
             raise Exception("No se pudo extraer texto de la imagen")
+        
+        app_logger.info(f"OCR completed. Extracted {len(full_text)} characters with confidence {confidence:.2f}")
         
         # Extract structured data
         invoice_data = {
@@ -212,22 +231,44 @@ class OCRProcessor:
     
     def _extract_ncf(self, text: str) -> Optional[str]:
         """Extract NCF (Comprobante Fiscal)"""
-        # Patterns: B0100000175, E310000026654, etc.
+        # ✅ Patrones mejorados para detectar más formatos
         patterns = [
+            # Patrones básicos
             r'\b([BE]\d{10,11})\b',
             r'NCF[:\s]*([BE]\d{10,11})',
             r'Comprobante[:\s]*([BE]\d{10,11})',
             r'N[uú]mero[:\s]*([BE]\d{10,11})',
+            
+            # Con espacios o guiones
+            r'\b([BE]\s?\d{2}\s?\d{8,9})\b',
+            r'NCF[:\s]*([BE]\s?\d{2}\s?\d{8,9})',
+            
+            # Con formato específico (ej: B01-00000175)
+            r'\b([BE]\d{2}[-\s]?\d{8,9})\b',
+            
+            # Más flexible
+            r'([BE][0-9\s-]{10,15})',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                ncf = match.group(1) if len(match.groups()) > 0 else match.group(0)
-                app_logger.debug(f"NCF found: {ncf}")
-                return ncf
+                ncf_raw = match.group(1) if len(match.groups()) > 0 else match.group(0)
+                
+                # ✅ Limpiar espacios y guiones
+                ncf = re.sub(r'[\s-]', '', ncf_raw)
+                
+                # ✅ Validar longitud
+                if len(ncf) >= 11 and len(ncf) <= 13:
+                    app_logger.debug(f"NCF found: {ncf}")
+                    return ncf
         
         app_logger.warning("NCF not found in text")
+        
+        # ✅ DEBUG: Mostrar las primeras líneas del texto
+        lines = text.split('\n')[:10]
+        app_logger.debug(f"First 10 lines of OCR text:\n{chr(10).join(lines)}")
+        
         return None
     
     def _extract_rnc(self, text: str) -> Optional[str]:

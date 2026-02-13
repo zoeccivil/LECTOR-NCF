@@ -104,7 +104,7 @@ class ConfigManager:
         
         return os.path.exists(cred_path)
     
-    # Getters para Firebase
+    # ✅ Getters para Firebase
     def get_firebase_credentials_path(self) -> str:
         return self.config.get("firebase", {}).get("credentials_path", "")
     
@@ -117,15 +117,18 @@ class ConfigManager:
     def get_firebase_project_id(self) -> str:
         return self.config.get("firebase", {}).get("project_id", "")
     
-    # Getters para Google Cloud
+    # ✅ Getters para Google Cloud (con fallback a Firebase)
     def get_google_cloud_credentials_path(self) -> str:
+        """Get Google Cloud credentials path, fallback to Firebase if empty"""
         gc_path = self.config.get("google_cloud", {}).get("credentials_path", "")
+        
         # Si no hay credenciales de Google Cloud, usar las de Firebase
         if not gc_path:
             return self.get_firebase_credentials_path()
+        
         return gc_path
     
-    # Getters para Twilio
+    # ✅ Getters para Twilio
     def get_twilio_account_sid(self) -> str:
         return self.config.get("twilio", {}).get("account_sid", "")
     
@@ -135,7 +138,7 @@ class ConfigManager:
     def get_twilio_whatsapp_number(self) -> str:
         return self.config.get("twilio", {}).get("whatsapp_number", "")
     
-    # Getters para App
+    # ✅ Getters para App
     def get_data_folder(self) -> str:
         return self.config.get("app", {}).get("data_folder", "./data")
     
@@ -145,10 +148,13 @@ class ConfigManager:
     def get_temp_folder(self) -> str:
         return self.config.get("app", {}).get("temp_folder", "./data/temp")
     
-    # Setters
+    # ✅ Setters
     def update_firebase_config(self, credentials_path: str, project_id: str, 
                               database_url: str, storage_bucket: str):
         """Actualiza configuración de Firebase."""
+        if "firebase" not in self.config:
+            self.config["firebase"] = {}
+        
         self.config["firebase"]["credentials_path"] = credentials_path
         self.config["firebase"]["project_id"] = project_id
         self.config["firebase"]["database_url"] = database_url
@@ -156,16 +162,25 @@ class ConfigManager:
     
     def update_google_cloud_config(self, credentials_path: str):
         """Actualiza configuración de Google Cloud."""
+        if "google_cloud" not in self.config:
+            self.config["google_cloud"] = {}
+        
         self.config["google_cloud"]["credentials_path"] = credentials_path
     
     def update_twilio_config(self, account_sid: str, auth_token: str, whatsapp_number: str):
         """Actualiza configuración de Twilio."""
+        if "twilio" not in self.config:
+            self.config["twilio"] = {}
+        
         self.config["twilio"]["account_sid"] = account_sid
         self.config["twilio"]["auth_token"] = auth_token
         self.config["twilio"]["whatsapp_number"] = whatsapp_number
     
     def update_app_config(self, data_folder: str, export_folder: str, temp_folder: str):
         """Actualiza configuración de rutas de la app."""
+        if "app" not in self.config:
+            self.config["app"] = {}
+        
         self.config["app"]["data_folder"] = data_folder
         self.config["app"]["export_folder"] = export_folder
         self.config["app"]["temp_folder"] = temp_folder

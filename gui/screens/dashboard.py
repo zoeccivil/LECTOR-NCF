@@ -144,8 +144,8 @@ class DashboardScreen(QWidget):
         self.search_box.textChanged.connect(self._on_search)
         header_layout.addWidget(self.search_box)
         
-        # Refresh button (texto simple, no emoji)
-        refresh_btn = QPushButton("↻")  # ← Carácter Unicode, no emoji
+        # Refresh button
+        refresh_btn = QPushButton("↻")
         refresh_btn.setToolTip("Actualizar datos")
         refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         refresh_btn.setFixedSize(40, 40)
@@ -186,7 +186,7 @@ class DashboardScreen(QWidget):
         export_btn.clicked.connect(self._on_export_clicked)
         header_layout.addWidget(export_btn)
 
-        # Import button (NUEVO)
+        # Import button
         import_btn = QPushButton("📥 Importar")
         import_btn.setToolTip("Importar factura manualmente con OCR")
         import_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -229,7 +229,6 @@ class DashboardScreen(QWidget):
         """Get the currently active table"""
         current_tab = self.tabs.currentWidget()
         if current_tab:
-            # Find the FacturaTable in the tab
             for child in current_tab.findChildren(FacturaTable):
                 return child
         return None
@@ -244,7 +243,6 @@ class DashboardScreen(QWidget):
         if not self.current_empresa_id:
             return
         
-        # Map tab index to status filter
         status_map = {
             0: None,           # Todas
             1: 'pendiente',    # Pendientes
@@ -254,16 +252,13 @@ class DashboardScreen(QWidget):
         
         estado = status_map.get(tab_index)
         
-        # Check if OCR method exists, otherwise use regular method
         if hasattr(firebase_handler, 'get_ocr_facturas_by_empresa'):
-            # Use OCR invoices collection
             self.worker_pool.execute(
                 lambda: firebase_handler.get_ocr_facturas_by_empresa(self.current_empresa_id, estado),
                 on_success=self._on_facturas_loaded,
                 on_error=self._on_error
             )
         else:
-            # Fallback to regular invoices (filter by estado if available)
             self.worker_pool.execute(
                 lambda: firebase_handler.get_facturas_by_empresa(self.current_empresa_id),
                 on_success=lambda facturas: self._on_facturas_loaded_with_filter(facturas, estado),
@@ -273,7 +268,6 @@ class DashboardScreen(QWidget):
     def _on_facturas_loaded_with_filter(self, facturas: list, estado: str):
         """Handle facturas loaded with manual filtering"""
         if estado:
-            # Filter facturas by estado
             filtered = [f for f in facturas if f.get('estado') == estado]
             self._on_facturas_loaded(filtered)
         else:
@@ -295,7 +289,6 @@ class DashboardScreen(QWidget):
         """Handle empresas data loaded"""
         self.empresa_list.set_empresas(empresas)
         
-        # Auto-select first empresa if available
         if empresas and not self.current_empresa_id:
             first_empresa_id = empresas[0].get('id')
             if first_empresa_id:
@@ -311,7 +304,6 @@ class DashboardScreen(QWidget):
         """Handle facturas data loaded"""
         self.current_facturas = facturas
         
-        # Update current tab's table
         table = self._get_active_table()
         if table and self.current_empresa_id:
             table.set_facturas(self.current_empresa_id, facturas)
@@ -324,7 +316,6 @@ class DashboardScreen(QWidget):
         
         search_text = text.lower()
         for row in range(table.rowCount()):
-            # Search in NCF (column 1), RNC (column 2), and Razón Social (column 3)
             ncf_item = table.item(row, 1)
             rnc_item = table.item(row, 2)
             razon_item = table.item(row, 3)
@@ -337,7 +328,6 @@ class DashboardScreen(QWidget):
             elif razon_item and search_text in razon_item.text().lower():
                 show = True
             
-            # If search is empty, show all rows
             if not search_text:
                 show = True
             
@@ -346,7 +336,6 @@ class DashboardScreen(QWidget):
     def _on_export_clicked(self):
         """Handle export button click"""
         if self.current_empresa_id:
-            # Verificar que haya facturas revisadas
             if hasattr(firebase_handler, 'get_ocr_facturas_by_empresa'):
                 revisadas = firebase_handler.get_ocr_facturas_by_empresa(
                     self.current_empresa_id, 
@@ -354,36 +343,31 @@ class DashboardScreen(QWidget):
                 )
                 
                 if not revisadas:
-                    QMessageBox.warning(
-                        self,
+                    self._show_message(
                         "Sin facturas revisadas",
                         "No hay facturas revisadas para exportar en esta empresa.\n\n"
-                        "Por favor, revisa las facturas pendientes primero."
+                        "Por favor, revisa las facturas pendientes primero.",
+                        QMessageBox.Icon.Warning
                     )
                     return
             
-            # Emitir señal con empresa_id
             self.export_requested.emit(self.current_empresa_id)
         else:
-            QMessageBox.warning(
-                self, 
-                "Advertencia", 
-                "Seleccione una empresa primero"
+            self._show_message(
+                "Advertencia",
+                "Selecciona una empresa primero",
+                QMessageBox.Icon.Warning
             )
     
     def _on_delete_factura(self, empresa_id: str, factura_id: str):
         """Handle factura delete request"""
-        reply = QMessageBox.question(
-            self, 
+        reply = self._show_question(
             "Confirmar Eliminación",
-            "¿Está seguro de que desea eliminar esta factura?\n\n"
-            "Esta acción no se puede deshacer.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            "¿Estás seguro de que deseas eliminar esta factura?\n\n"
+            "Esta acción no se puede deshacer."
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            # Check if OCR delete method exists
             if hasattr(firebase_handler, 'delete_ocr_factura'):
                 delete_method = lambda: firebase_handler.delete_ocr_factura(factura_id)
             else:
@@ -398,18 +382,24 @@ class DashboardScreen(QWidget):
     def _on_delete_complete(self, success: bool):
         """Handle delete completion"""
         if success:
-            QMessageBox.information(self, "Éxito", "Factura eliminada correctamente")
-            # Refresh facturas
+            self._show_message(
+                "Éxito",
+                "Factura eliminada correctamente",
+                QMessageBox.Icon.Information
+            )
             if self.current_empresa_id:
                 self._load_facturas_for_tab(self.tabs.currentIndex())
         else:
-            QMessageBox.warning(self, "Error", "No se pudo eliminar la factura")
+            self._show_message(
+                "Error",
+                "No se pudo eliminar la factura",
+                QMessageBox.Icon.Critical
+            )
     
     def _on_error(self, error):
         """Handle error"""
         error_msg = str(error) if error else "Error desconocido"
-        QMessageBox.critical(self, "Error", f"Error: {error_msg}")
-
+        self._show_message("Error", f"Error: {error_msg}", QMessageBox.Icon.Critical)
 
     def _on_import_clicked(self):
         """Handle import button click"""
@@ -419,18 +409,16 @@ class DashboardScreen(QWidget):
             from app.firebase_handler import firebase_handler
             from app.utils.logger import app_logger
             
-            # Get empresas (returns list)
             empresas_list = firebase_handler.get_empresas()
             
             if not empresas_list:
-                QMessageBox.warning(
-                    self,
+                self._show_message(
                     "Sin empresas",
-                    "No hay empresas disponibles. Carga las empresas primero."
+                    "No hay empresas disponibles. Carga las empresas primero.",
+                    QMessageBox.Icon.Warning
                 )
                 return
             
-            # Format for dialog (already in correct format)
             empresas = []
             for emp in empresas_list:
                 empresas.append({
@@ -440,7 +428,6 @@ class DashboardScreen(QWidget):
             
             app_logger.info(f"Opening import dialog with {len(empresas)} empresas")
             
-            # Open import dialog
             dialog = ImportInvoiceDialog(empresas, self)
             dialog.invoice_imported.connect(self.refresh_data)
             dialog.exec()
@@ -450,8 +437,113 @@ class DashboardScreen(QWidget):
             app_logger.error(f"Error opening import dialog: {e}")
             import traceback
             traceback.print_exc()
-            QMessageBox.critical(
-                self,
+            self._show_message(
                 "Error",
-                f"Error al abrir el importador:\n{str(e)}"
+                f"Error al abrir el importador:\n{str(e)}",
+                QMessageBox.Icon.Critical
             )
+    
+    # ========================================
+    # MÉTODOS HELPER PARA MENSAJES PERSONALIZADOS
+    # ========================================
+    
+    def _show_message(self, title: str, message: str, icon: QMessageBox.Icon):
+        """Show message dialog with custom styling"""
+        msg = QMessageBox(self)
+        msg.setIcon(icon)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        
+        if icon == QMessageBox.Icon.Information:
+            button_color = "#10B981"
+            button_hover = "#059669"
+        elif icon == QMessageBox.Icon.Critical:
+            button_color = "#DC2626"
+            button_hover = "#B91C1C"
+        elif icon == QMessageBox.Icon.Warning:
+            button_color = "#F59E0B"
+            button_hover = "#D97706"
+        else:
+            button_color = "#2563EB"
+            button_hover = "#1D4ED8"
+        
+        msg.setStyleSheet(f"""
+            QMessageBox {{
+                background-color: #FFFFFF;
+            }}
+            QMessageBox QLabel {{
+                color: #111827;
+                background-color: transparent;
+                min-width: 350px;
+                font-size: 14px;
+                padding: 8px;
+            }}
+            QMessageBox QPushButton {{
+                background-color: {button_color};
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 24px;
+                font-size: 14px;
+                font-weight: 600;
+                min-width: 100px;
+                min-height: 36px;
+            }}
+            QMessageBox QPushButton:hover {{
+                background-color: {button_hover};
+            }}
+        """)
+        
+        msg.exec()
+    
+    def _show_question(self, title: str, message: str) -> QMessageBox.StandardButton:
+        """Show question dialog with custom styling"""
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setDefaultButton(QMessageBox.StandardButton.No)
+        
+        yes_btn = msg.button(QMessageBox.StandardButton.Yes)
+        no_btn = msg.button(QMessageBox.StandardButton.No)
+        yes_btn.setText("Sí, eliminar")
+        no_btn.setText("Cancelar")
+        
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #FFFFFF;
+            }
+            QMessageBox QLabel {
+                color: #111827;
+                background-color: transparent;
+                min-width: 400px;
+                font-size: 14px;
+                padding: 8px;
+            }
+            QMessageBox QPushButton {
+                background-color: #FFFFFF;
+                color: #374151;
+                border: 2px solid #E5E7EB;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: 600;
+                min-width: 120px;
+                min-height: 36px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #F9FAFB;
+                border-color: #D1D5DB;
+            }
+            QMessageBox QPushButton:default {
+                background-color: #DC2626;
+                color: #FFFFFF;
+                border: none;
+            }
+            QMessageBox QPushButton:default:hover {
+                background-color: #B91C1C;
+            }
+        """)
+        
+        return msg.exec()
