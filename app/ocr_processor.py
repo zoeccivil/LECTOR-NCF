@@ -2,8 +2,10 @@
 Google Cloud Vision OCR processor for invoice text extraction
 """
 from google.cloud import vision
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 import os
+import re
+from datetime import datetime
 from app.utils.logger import app_logger
 from app.utils.config import settings
 
@@ -14,14 +16,19 @@ class OCRProcessor:
     def __init__(self):
         """Initialize Google Cloud Vision client"""
         try:
-            # Set credentials from config
-            if settings.google_application_credentials and os.path.exists(settings.google_application_credentials):
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = settings.google_application_credentials
+            # ✅ Set credentials from config (supports google_cloud.credentials_path)
+            creds_path = settings.google_application_credentials
+            
+            if creds_path and os.path.exists(creds_path):
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
+                app_logger.info(f"Using Google Cloud credentials: {creds_path}")
+            else:
+                app_logger.warning(f"Credentials file not found: {creds_path}")
             
             self.client = vision.ImageAnnotatorClient()
-            app_logger.info("Google Cloud Vision client initialized successfully")
+            app_logger.info("✅ Google Cloud Vision client initialized successfully")
         except Exception as e:
-            app_logger.error(f"Failed to initialize Google Cloud Vision client: {e}")
+            app_logger.error(f"❌ Failed to initialize Google Cloud Vision client: {e}")
             self.client = None
     
     def extract_text_from_image(self, image_bytes: bytes) -> Tuple[Optional[str], Optional[float]]:
@@ -164,6 +171,229 @@ class OCRProcessor:
             return self.extract_text_with_document_detection(image_bytes)
         else:
             return self.extract_text_from_image(image_bytes)
+    
+    # ============================================
+    # EXTRACCIÓN DE CAMPOS ESTRUCTURADOS
+    # ============================================
+    
+    def extract_invoice_data(self, image_bytes: bytes) -> Dict:
+        """
+        Extract structured invoice data from image
+        
+        Args:
+            image_bytes: Image data as bytes
+            
+        Returns:
+            Dict with extracted invoice fields
+        """
+        # ✅ Validación mejorada (sin modo MOCK)
+        if not self.client:
+            raise Exception(
+                "❌ Google Cloud Vision client not initialized.\n\n"
+                "Verifica que:\n"
+                "1. El archivo de credenciales existe\n"
+                "2. config.json tiene 'google_cloud.credentials_path' configurado\n"
+                "3. La API de Vision está habilitada en Google Cloud Console\n\n"
+                f"Ruta configurada: {settings.google_application_credentials}"
+            )
+        
+        # Get OCR text
+        app_logger.info("Processing image with Google Cloud Vision...")
+        full_text, confidence = self.process_invoice_image(image_bytes)
+        
+        if not full_text:
+            raise Exception("No se pudo extraer texto de la imagen")
+        
+        app_logger.info(f"OCR completed. Extracted {len(full_text)} characters with confidence {confidence:.2f}")
+        
+        # Extract structured data
+        invoice_data = {
+            'ncf': self._extract_ncf(full_text),
+            'rnc': self._extract_rnc(full_text),
+            'razon_social': self._extract_razon_social(full_text),
+            'fecha_emision': self._extract_fecha(full_text),
+            'subtotal': self._extract_subtotal(full_text),
+            'itbis': self._extract_itbis(full_text),
+            'total': self._extract_total(full_text),
+            'confianza_ocr': confidence or 0.85,
+            'texto_completo': full_text
+        }
+        
+        # Calculate missing values
+        if invoice_data['total'] and invoice_data['itbis'] and not invoice_data['subtotal']:
+            invoice_data['subtotal'] = invoice_data['total'] - invoice_data['itbis']
+        elif invoice_data['subtotal'] and invoice_data['itbis'] and not invoice_data['total']:
+            invoice_data['total'] = invoice_data['subtotal'] + invoice_data['itbis']
+        
+        app_logger.info(f"Invoice data extracted: NCF={invoice_data['ncf']}, Total={invoice_data['total']}")
+        
+        return invoice_data
+    
+    def _extract_ncf(self, text: str) -> Optional[str]:
+        """Extract NCF (Comprobante Fiscal)"""
+        # ✅ Patrones mejorados para detectar más formatos
+        patterns = [
+            # Patrones básicos
+            r'\b([BE]\d{10,11})\b',
+            r'NCF[:\s]*([BE]\d{10,11})',
+            r'Comprobante[:\s]*([BE]\d{10,11})',
+            r'N[uú]mero[:\s]*([BE]\d{10,11})',
+            
+            # Con espacios o guiones
+            r'\b([BE]\s?\d{2}\s?\d{8,9})\b',
+            r'NCF[:\s]*([BE]\s?\d{2}\s?\d{8,9})',
+            
+            # Con formato específico (ej: B01-00000175)
+            r'\b([BE]\d{2}[-\s]?\d{8,9})\b',
+            
+            # Más flexible
+            r'([BE][0-9\s-]{10,15})',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                ncf_raw = match.group(1) if len(match.groups()) > 0 else match.group(0)
+                
+                # ✅ Limpiar espacios y guiones
+                ncf = re.sub(r'[\s-]', '', ncf_raw)
+                
+                # ✅ Validar longitud
+                if len(ncf) >= 11 and len(ncf) <= 13:
+                    app_logger.debug(f"NCF found: {ncf}")
+                    return ncf
+        
+        app_logger.warning("NCF not found in text")
+        
+        # ✅ DEBUG: Mostrar las primeras líneas del texto
+        lines = text.split('\n')[:10]
+        app_logger.debug(f"First 10 lines of OCR text:\n{chr(10).join(lines)}")
+        
+        return None
+    
+    def _extract_rnc(self, text: str) -> Optional[str]:
+        """Extract RNC (Registro Nacional de Contribuyentes)"""
+        # Pattern: 9 or 11 digits
+        patterns = [
+            r'RNC[:\s]*(\d{9,11})',
+            r'Registro[:\s]*(\d{9,11})',
+            r'Contribuyente[:\s]*(\d{9,11})',
+            r'\b(\d{9})\b',
+            r'\b(\d{11})\b',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                rnc = match.group(1)
+                # Validate length
+                if len(rnc) in [9, 11]:
+                    app_logger.debug(f"RNC found: {rnc}")
+                    return rnc
+        
+        app_logger.warning("RNC not found in text")
+        return None
+    
+    def _extract_razon_social(self, text: str) -> Optional[str]:
+        """Extract company name (Razón Social)"""
+        lines = text.split('\n')
+        
+        # Look for uppercase company names in first 15 lines
+        for i, line in enumerate(lines[:15]):
+            line = line.strip()
+            
+            # Skip lines with common keywords
+            skip_keywords = ['factura', 'invoice', 'ncf', 'rnc', 'fecha', 'date', 'total', 'comprobante']
+            if any(keyword in line.lower() for keyword in skip_keywords):
+                continue
+            
+            # Look for lines with mostly uppercase letters
+            if len(line) > 10:
+                uppercase_ratio = sum(1 for c in line if c.isupper()) / len(line)
+                if uppercase_ratio > 0.6 and not re.search(r'\d{9}', line):
+                    app_logger.debug(f"Razón Social found: {line}")
+                    return line
+        
+        # Fallback: look for text after RNC
+        rnc_match = re.search(r'RNC[:\s]*\d{9,11}[:\s]*(.+)', text, re.IGNORECASE)
+        if rnc_match:
+            razon = rnc_match.group(1).strip().split('\n')[0]
+            if len(razon) > 5:
+                app_logger.debug(f"Razón Social found (after RNC): {razon}")
+                return razon
+        
+        app_logger.warning("Razón Social not found in text")
+        return None
+    
+    def _extract_fecha(self, text: str) -> Optional[datetime]:
+        """Extract invoice date"""
+        # Patterns: DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD
+        patterns = [
+            r'(\d{2})[/-](\d{2})[/-](\d{4})',
+            r'(\d{4})[/-](\d{2})[/-](\d{2})',
+            r'Fecha[:\s]*(\d{2})[/-](\d{2})[/-](\d{4})',
+            r'Date[:\s]*(\d{2})[/-](\d{2})[/-](\d{4})',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                try:
+                    groups = match.groups()
+                    
+                    # Try DD/MM/YYYY
+                    if len(groups) == 3:
+                        if len(groups[2]) == 4:  # DD/MM/YYYY
+                            day, month, year = int(groups[0]), int(groups[1]), int(groups[2])
+                        else:  # YYYY/MM/DD
+                            year, month, day = int(groups[0]), int(groups[1]), int(groups[2])
+                        
+                        fecha = datetime(year, month, day)
+                        app_logger.debug(f"Fecha found: {fecha.strftime('%Y-%m-%d')}")
+                        return fecha
+                except ValueError:
+                    continue
+        
+        app_logger.warning("Fecha not found, using current date")
+        return datetime.now()
+    
+    def _extract_amount(self, text: str, keywords: list) -> Optional[float]:
+        """Generic amount extractor"""
+        for keyword in keywords:
+            # Patterns for amounts
+            patterns = [
+                rf'{keyword}[:\s]*\$?\s*([\d,]+\.?\d*)',
+                rf'{keyword}[:\s]*RD\$?\s*([\d,]+\.?\d*)',
+                rf'{keyword}[:\s]*DOP\s*([\d,]+\.?\d*)',
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    try:
+                        value = match.group(1).replace(',', '')
+                        amount = float(value)
+                        app_logger.debug(f"{keyword} found: {amount}")
+                        return amount
+                    except ValueError:
+                        continue
+        
+        return None
+    
+    def _extract_subtotal(self, text: str) -> Optional[float]:
+        """Extract subtotal"""
+        keywords = ['subtotal', 'sub-total', 'sub total', 'imponible', 'base']
+        return self._extract_amount(text, keywords)
+    
+    def _extract_itbis(self, text: str) -> Optional[float]:
+        """Extract ITBIS (tax)"""
+        keywords = ['itbis', 'impuesto', 'tax', 'iva']
+        return self._extract_amount(text, keywords)
+    
+    def _extract_total(self, text: str) -> Optional[float]:
+        """Extract total amount"""
+        keywords = ['total', 'total a pagar', 'monto total', 'gran total']
+        return self._extract_amount(text, keywords)
 
 
 # Global OCR processor instance

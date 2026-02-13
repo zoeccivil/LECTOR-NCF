@@ -15,10 +15,10 @@ Pillow==12.1.1
 opencv-python==4.9.0.80
 
 # Data Processing
-pandas==2.1.4
+pandas==2.2.3
 python-dateutil==2.8.2
 
-# Firebase (Optional)
+# Firebase
 firebase-admin==6.3.0
 
 # Utilities

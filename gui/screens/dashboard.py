@@ -1,10 +1,10 @@
 """
-Dashboard screen - Main screen with empresa list and factura table
+Dashboard screen - Main screen with empresa list and factura table - Redesigned
 """
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, 
-                             QPushButton, QButtonGroup, QRadioButton, QMessageBox,
+                             QPushButton, QTabWidget, QMessageBox,
                              QLabel, QFrame)
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt, QSize
 from PyQt6.QtGui import QIcon
 import sys
 import os
@@ -18,7 +18,7 @@ from app.firebase_handler import firebase_handler
 
 
 class DashboardScreen(QWidget):
-    """Main dashboard screen"""
+    """Main dashboard screen - Redesigned with tabs and modern UI"""
     
     factura_selected = pyqtSignal(str, str)  # empresa_id, factura_id
     export_requested = pyqtSignal(str)       # empresa_id
@@ -37,156 +37,344 @@ class DashboardScreen(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
-        # Left sidebar (250px fixed)
+        # Left sidebar (220px fixed)
         self.empresa_list = EmpresaList()
-        self.empresa_list.setFixedWidth(250)
+        self.empresa_list.setFixedWidth(220)
         self.empresa_list.empresa_selected.connect(self._on_empresa_selected)
         main_layout.addWidget(self.empresa_list)
         
         # Right content area
         content = QWidget()
+        content.setStyleSheet("background-color: #F9FAFB;")
         content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(20, 20, 20, 20)
-        content_layout.setSpacing(16)
+        content_layout.setContentsMargins(32, 32, 32, 32)
+        content_layout.setSpacing(24)
         
-        # Header
-        header = QLabel("Facturas")
-        header.setProperty("class", "title")
-        header.setStyleSheet("font-size: 24px; font-weight: bold; color: #212121;")
+        # Header with title and tabs
+        header = self._create_header()
         content_layout.addWidget(header)
         
-        # Filter bar
-        filter_bar = self._create_filter_bar()
-        content_layout.addWidget(filter_bar)
+        # Tab widget for different states
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: none;
+                background-color: transparent;
+            }
+            QTabBar::tab {
+                background-color: transparent;
+                color: #6B7280;
+                padding: 12px 24px;
+                border: none;
+                border-bottom: 3px solid transparent;
+                font-size: 14px;
+                font-weight: 500;
+                margin-right: 8px;
+            }
+            QTabBar::tab:selected {
+                color: #2563EB;
+                border-bottom: 3px solid #2563EB;
+                font-weight: 600;
+            }
+            QTabBar::tab:hover {
+                color: #1E40AF;
+                background-color: #F3F4F6;
+                border-radius: 6px 6px 0 0;
+            }
+        """)
         
-        # Factura table
-        self.factura_table = FacturaTable()
-        self.factura_table.factura_double_clicked.connect(self.factura_selected.emit)
-        self.factura_table.factura_edit_clicked.connect(self.factura_selected.emit)
-        self.factura_table.factura_delete_clicked.connect(self._on_delete_factura)
-        content_layout.addWidget(self.factura_table)
+        # Create tabs with tables
+        self.tab_todas = self._create_table_tab()
+        self.tab_pendientes = self._create_table_tab()
+        self.tab_revisadas = self._create_table_tab()
+        self.tab_exportadas = self._create_table_tab()
+        
+        # Add tabs
+        self.tabs.addTab(self.tab_todas, "📋 Todas")
+        self.tabs.addTab(self.tab_pendientes, "⏱️ Pendientes")
+        self.tabs.addTab(self.tab_revisadas, "✓ Revisadas")
+        self.tabs.addTab(self.tab_exportadas, "📤 Exportadas")
+        
+        # Connect tab change
+        self.tabs.currentChanged.connect(self._on_tab_changed)
+        
+        content_layout.addWidget(self.tabs)
         
         main_layout.addWidget(content)
+        
+        # Load initial data
+        self._load_empresas()
     
-    def _create_filter_bar(self) -> QWidget:
-        """Create filter bar with buttons and search"""
-        filter_widget = QWidget()
-        filter_layout = QHBoxLayout(filter_widget)
-        filter_layout.setContentsMargins(0, 0, 0, 0)
-        filter_layout.setSpacing(12)
+    def _create_header(self) -> QWidget:
+        """Create header with title, search, and export button"""
+        header = QWidget()
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(24)
         
-        # Status filter buttons
-        self.filter_group = QButtonGroup()
+        # Title
+        title = QLabel("Facturas OCR")
+        title.setStyleSheet("""
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+        """)
+        header_layout.addWidget(title)
         
-        btn_todas = QRadioButton("Todas")
-        btn_todas.setChecked(True)
-        btn_todas.toggled.connect(lambda: self._apply_filter("todas"))
-        self.filter_group.addButton(btn_todas)
-        filter_layout.addWidget(btn_todas)
-        
-        btn_pendientes = QRadioButton("Pendientes")
-        btn_pendientes.toggled.connect(lambda: self._apply_filter("pendientes"))
-        self.filter_group.addButton(btn_pendientes)
-        filter_layout.addWidget(btn_pendientes)
-        
-        btn_revisadas = QRadioButton("Revisadas")
-        btn_revisadas.toggled.connect(lambda: self._apply_filter("revisadas"))
-        self.filter_group.addButton(btn_revisadas)
-        filter_layout.addWidget(btn_revisadas)
-        
-        filter_layout.addSpacing(20)
+        header_layout.addStretch()
         
         # Search box
         self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText("🔍 Buscar por NCF...")
-        self.search_box.setMaximumWidth(250)
+        self.search_box.setPlaceholderText("🔍 Buscar por NCF, RNC o Razón Social...")
+        self.search_box.setMinimumWidth(300)
+        self.search_box.setStyleSheet("""
+            QLineEdit {
+                padding: 10px 16px;
+                border: 1px solid #D1D5DB;
+                border-radius: 8px;
+                background-color: #FFFFFF;
+                font-size: 13px;
+                color: #111827;
+            }
+            QLineEdit:focus {
+                border: 2px solid #2563EB;
+                outline: none;
+            }
+        """)
         self.search_box.textChanged.connect(self._on_search)
-        filter_layout.addWidget(self.search_box)
+        header_layout.addWidget(self.search_box)
         
-        filter_layout.addStretch()
+        # Refresh button
+        refresh_btn = QPushButton("↻")
+        refresh_btn.setToolTip("Actualizar datos")
+        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        refresh_btn.setFixedSize(40, 40)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FFFFFF;
+                border: 1px solid #D1D5DB;
+                border-radius: 8px;
+                font-size: 20px;
+                color: #374151;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #F3F4F6;
+                border-color: #9CA3AF;
+            }
+        """)
+        refresh_btn.clicked.connect(self.refresh_data)
+        header_layout.addWidget(refresh_btn)
         
         # Export button
         export_btn = QPushButton("📤 Exportar")
-        export_btn.setProperty("class", "primary")
-        export_btn.setFixedHeight(36)
+        export_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2563EB;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 24px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #1E40AF;
+            }
+        """)
         export_btn.clicked.connect(self._on_export_clicked)
-        filter_layout.addWidget(export_btn)
+        header_layout.addWidget(export_btn)
+
+        # Import button
+        import_btn = QPushButton("📥 Importar")
+        import_btn.setToolTip("Importar factura manualmente con OCR")
+        import_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        import_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #10B981;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+            }
+        """)
+        import_btn.clicked.connect(self._on_import_clicked)
+        header_layout.addWidget(import_btn)
         
-        return filter_widget
+        return header
     
-    def refresh_data(self):
-        """Refresh empresas and facturas data"""
+    def _create_table_tab(self) -> QWidget:
+        """Create a tab containing a factura table"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(0, 16, 0, 0)
+        
+        # Create table
+        table = FacturaTable()
+        table.factura_double_clicked.connect(self.factura_selected.emit)
+        table.factura_edit_clicked.connect(self.factura_selected.emit)
+        table.factura_delete_clicked.connect(self._on_delete_factura)
+        
+        layout.addWidget(table)
+        
+        return tab
+    
+    def _get_active_table(self) -> FacturaTable:
+        """Get the currently active table"""
+        current_tab = self.tabs.currentWidget()
+        if current_tab:
+            for child in current_tab.findChildren(FacturaTable):
+                return child
+        return None
+    
+    def _on_tab_changed(self, index: int):
+        """Handle tab change"""
+        if self.current_empresa_id:
+            self._load_facturas_for_tab(index)
+    
+    def _load_facturas_for_tab(self, tab_index: int):
+        """Load facturas based on selected tab"""
+        if not self.current_empresa_id:
+            return
+        
+        status_map = {
+            0: None,           # Todas
+            1: 'pendiente',    # Pendientes
+            2: 'revisada',     # Revisadas
+            3: 'exportada'     # Exportadas
+        }
+        
+        estado = status_map.get(tab_index)
+        
+        if hasattr(firebase_handler, 'get_ocr_facturas_by_empresa'):
+            self.worker_pool.execute(
+                lambda: firebase_handler.get_ocr_facturas_by_empresa(self.current_empresa_id, estado),
+                on_success=self._on_facturas_loaded,
+                on_error=self._on_error
+            )
+        else:
+            self.worker_pool.execute(
+                lambda: firebase_handler.get_facturas_by_empresa(self.current_empresa_id),
+                on_success=lambda facturas: self._on_facturas_loaded_with_filter(facturas, estado),
+                on_error=self._on_error
+            )
+    
+    def _on_facturas_loaded_with_filter(self, facturas: list, estado: str):
+        """Handle facturas loaded with manual filtering"""
+        if estado:
+            filtered = [f for f in facturas if f.get('estado') == estado]
+            self._on_facturas_loaded(filtered)
+        else:
+            self._on_facturas_loaded(facturas)
+    
+    def _load_empresas(self):
+        """Load empresas from Firebase"""
         self.worker_pool.execute(
             firebase_handler.get_empresas,
             on_success=self._on_empresas_loaded,
             on_error=self._on_error
         )
     
+    def refresh_data(self):
+        """Refresh empresas and facturas data"""
+        self._load_empresas()
+    
     def _on_empresas_loaded(self, empresas: list):
         """Handle empresas data loaded"""
         self.empresa_list.set_empresas(empresas)
         
-        # Auto-select first empresa if available
         if empresas and not self.current_empresa_id:
             first_empresa_id = empresas[0].get('id')
             if first_empresa_id:
-                self._load_facturas(first_empresa_id)
+                self.current_empresa_id = first_empresa_id
+                self._load_facturas_for_tab(self.tabs.currentIndex())
     
     def _on_empresa_selected(self, empresa_id: str):
         """Handle empresa selection"""
-        self._load_facturas(empresa_id)
-    
-    def _load_facturas(self, empresa_id: str):
-        """Load facturas for selected empresa"""
         self.current_empresa_id = empresa_id
-        self.worker_pool.execute(
-            lambda: firebase_handler.get_facturas_by_empresa(empresa_id),
-            on_success=self._on_facturas_loaded,
-            on_error=self._on_error
-        )
+        self._load_facturas_for_tab(self.tabs.currentIndex())
     
     def _on_facturas_loaded(self, facturas: list):
         """Handle facturas data loaded"""
         self.current_facturas = facturas
-        if self.current_empresa_id:
-            self.factura_table.set_facturas(self.current_empresa_id, facturas)
-    
-    def _apply_filter(self, status: str):
-        """Apply status filter to table"""
-        self.factura_table.filter_by_status(status)
+        
+        table = self._get_active_table()
+        if table and self.current_empresa_id:
+            table.set_facturas(self.current_empresa_id, facturas)
     
     def _on_search(self, text: str):
         """Handle search text change"""
+        table = self._get_active_table()
+        if not table:
+            return
+        
         search_text = text.lower()
-        for row in range(self.factura_table.rowCount()):
-            ncf_item = self.factura_table.item(row, 0)
-            if ncf_item:
-                ncf = ncf_item.text().lower()
-                show = search_text in ncf
-                self.factura_table.setRowHidden(row, not show)
+        for row in range(table.rowCount()):
+            ncf_item = table.item(row, 1)
+            rnc_item = table.item(row, 2)
+            razon_item = table.item(row, 3)
+            
+            show = False
+            if ncf_item and search_text in ncf_item.text().lower():
+                show = True
+            elif rnc_item and search_text in rnc_item.text().lower():
+                show = True
+            elif razon_item and search_text in razon_item.text().lower():
+                show = True
+            
+            if not search_text:
+                show = True
+            
+            table.setRowHidden(row, not show)
     
     def _on_export_clicked(self):
         """Handle export button click"""
         if self.current_empresa_id:
+            if hasattr(firebase_handler, 'get_ocr_facturas_by_empresa'):
+                revisadas = firebase_handler.get_ocr_facturas_by_empresa(
+                    self.current_empresa_id, 
+                    estado='revisada'
+                )
+                
+                if not revisadas:
+                    self._show_message(
+                        "Sin facturas revisadas",
+                        "No hay facturas revisadas para exportar en esta empresa.\n\n"
+                        "Por favor, revisa las facturas pendientes primero.",
+                        QMessageBox.Icon.Warning
+                    )
+                    return
+            
             self.export_requested.emit(self.current_empresa_id)
         else:
-            QMessageBox.warning(self, "Advertencia", 
-                              "Seleccione una empresa primero")
+            self._show_message(
+                "Advertencia",
+                "Selecciona una empresa primero",
+                QMessageBox.Icon.Warning
+            )
     
     def _on_delete_factura(self, empresa_id: str, factura_id: str):
         """Handle factura delete request"""
-        reply = QMessageBox.question(
-            self, 
+        reply = self._show_question(
             "Confirmar Eliminación",
-            "¿Está seguro de que desea eliminar esta factura?\n\n"
-            "Esta acción no se puede deshacer.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            "¿Estás seguro de que deseas eliminar esta factura?\n\n"
+            "Esta acción no se puede deshacer."
         )
         
         if reply == QMessageBox.StandardButton.Yes:
+            if hasattr(firebase_handler, 'delete_ocr_factura'):
+                delete_method = lambda: firebase_handler.delete_ocr_factura(factura_id)
+            else:
+                delete_method = lambda: firebase_handler.delete_factura(empresa_id, factura_id)
+            
             self.worker_pool.execute(
-                lambda: firebase_handler.delete_factura(empresa_id, factura_id),
+                delete_method,
                 on_success=lambda success: self._on_delete_complete(success),
                 on_error=self._on_error
             )
@@ -194,13 +382,168 @@ class DashboardScreen(QWidget):
     def _on_delete_complete(self, success: bool):
         """Handle delete completion"""
         if success:
-            QMessageBox.information(self, "Éxito", "Factura eliminada correctamente")
-            # Refresh facturas
+            self._show_message(
+                "Éxito",
+                "Factura eliminada correctamente",
+                QMessageBox.Icon.Information
+            )
             if self.current_empresa_id:
-                self._load_facturas(self.current_empresa_id)
+                self._load_facturas_for_tab(self.tabs.currentIndex())
         else:
-            QMessageBox.warning(self, "Error", "No se pudo eliminar la factura")
+            self._show_message(
+                "Error",
+                "No se pudo eliminar la factura",
+                QMessageBox.Icon.Critical
+            )
     
-    def _on_error(self, error_msg: str):
+    def _on_error(self, error):
         """Handle error"""
-        QMessageBox.critical(self, "Error", f"Error: {error_msg}")
+        error_msg = str(error) if error else "Error desconocido"
+        self._show_message("Error", f"Error: {error_msg}", QMessageBox.Icon.Critical)
+
+    def _on_import_clicked(self):
+        """Handle import button click"""
+        from gui.dialogs.import_dialog import ImportInvoiceDialog
+        
+        try:
+            from app.firebase_handler import firebase_handler
+            from app.utils.logger import app_logger
+            
+            empresas_list = firebase_handler.get_empresas()
+            
+            if not empresas_list:
+                self._show_message(
+                    "Sin empresas",
+                    "No hay empresas disponibles. Carga las empresas primero.",
+                    QMessageBox.Icon.Warning
+                )
+                return
+            
+            empresas = []
+            for emp in empresas_list:
+                empresas.append({
+                    'id': emp.get('id', ''),
+                    'nombre': emp.get('nombre', emp.get('name', 'Sin nombre'))
+                })
+            
+            app_logger.info(f"Opening import dialog with {len(empresas)} empresas")
+            
+            dialog = ImportInvoiceDialog(empresas, self)
+            dialog.invoice_imported.connect(self.refresh_data)
+            dialog.exec()
+            
+        except Exception as e:
+            from app.utils.logger import app_logger
+            app_logger.error(f"Error opening import dialog: {e}")
+            import traceback
+            traceback.print_exc()
+            self._show_message(
+                "Error",
+                f"Error al abrir el importador:\n{str(e)}",
+                QMessageBox.Icon.Critical
+            )
+    
+    # ========================================
+    # MÉTODOS HELPER PARA MENSAJES PERSONALIZADOS
+    # ========================================
+    
+    def _show_message(self, title: str, message: str, icon: QMessageBox.Icon):
+        """Show message dialog with custom styling"""
+        msg = QMessageBox(self)
+        msg.setIcon(icon)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        
+        if icon == QMessageBox.Icon.Information:
+            button_color = "#10B981"
+            button_hover = "#059669"
+        elif icon == QMessageBox.Icon.Critical:
+            button_color = "#DC2626"
+            button_hover = "#B91C1C"
+        elif icon == QMessageBox.Icon.Warning:
+            button_color = "#F59E0B"
+            button_hover = "#D97706"
+        else:
+            button_color = "#2563EB"
+            button_hover = "#1D4ED8"
+        
+        msg.setStyleSheet(f"""
+            QMessageBox {{
+                background-color: #FFFFFF;
+            }}
+            QMessageBox QLabel {{
+                color: #111827;
+                background-color: transparent;
+                min-width: 350px;
+                font-size: 14px;
+                padding: 8px;
+            }}
+            QMessageBox QPushButton {{
+                background-color: {button_color};
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 24px;
+                font-size: 14px;
+                font-weight: 600;
+                min-width: 100px;
+                min-height: 36px;
+            }}
+            QMessageBox QPushButton:hover {{
+                background-color: {button_hover};
+            }}
+        """)
+        
+        msg.exec()
+    
+    def _show_question(self, title: str, message: str) -> QMessageBox.StandardButton:
+        """Show question dialog with custom styling"""
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setDefaultButton(QMessageBox.StandardButton.No)
+        
+        yes_btn = msg.button(QMessageBox.StandardButton.Yes)
+        no_btn = msg.button(QMessageBox.StandardButton.No)
+        yes_btn.setText("Sí, eliminar")
+        no_btn.setText("Cancelar")
+        
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #FFFFFF;
+            }
+            QMessageBox QLabel {
+                color: #111827;
+                background-color: transparent;
+                min-width: 400px;
+                font-size: 14px;
+                padding: 8px;
+            }
+            QMessageBox QPushButton {
+                background-color: #FFFFFF;
+                color: #374151;
+                border: 2px solid #E5E7EB;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: 600;
+                min-width: 120px;
+                min-height: 36px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #F9FAFB;
+                border-color: #D1D5DB;
+            }
+            QMessageBox QPushButton:default {
+                background-color: #DC2626;
+                color: #FFFFFF;
+                border: none;
+            }
+            QMessageBox QPushButton:default:hover {
+                background-color: #B91C1C;
+            }
+        """)
+        
+        return msg.exec()

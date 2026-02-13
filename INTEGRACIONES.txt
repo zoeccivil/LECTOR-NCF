@@ -1,0 +1,318 @@
+INTEGRAR SEGUN LOS RNC LEIDOS Y ELEGIR EMPRESAS DONDE VAN LAS FACTURAS SUBIDAS.
+SABER SI PODEMOS AGREGAR EL NUMERO DE TWILIO A UN GRUPO Y QU EESTE RESPONDA Y LEA LA DATASOLO IMAGENES YA QUE LAS FACTURAS LAS DIVIDO POR GRUPO DE EMPRESAS
+
+
+tenemos dos perdidas de visualizacion, primero el menu superior, esta onvisible, y el boton de refresco debe ser svg y no icono del sistemaque se vea, en la ventana exportar, invisible el texto de la tabla, invisible el menu superiror y la distribucion de espacios y tamano de letra esta rotundamente mal deistibuida y visualmente horrible
+
+📋 PLAN DE TRABAJO - DÍA 2 (MAÑANA)
+✅ LO QUE LOGRAMOS HOY:
+✅ Dashboard funcional con 8 empresas
+✅ Tabla de facturas con filtros (Todas, Pendientes, Revisadas, Exportadas)
+✅ Pantalla de exportación rediseñada
+✅ Importador manual con diálogo (modo MOCK)
+✅ Búsqueda por NCF, RNC, Razón Social
+✅ Suma correcta de totales en exportador
+✅ Estados visuales (badges de colores)
+✅ Botones de acción (editar, eliminar)
+🎯 PENDIENTES PARA MAÑANA:
+1. INTEGRACIÓN GOOGLE CLOUD VISION API ⭐⭐⭐
+Tareas:
+ Copiar credenciales del bot de WhatsApp a credentials/google-cloud-vision.json
+ Actualizar config.json con la ruta correcta
+ Probar importación manual con OCR REAL
+ Verificar extracción de campos: NCF, RNC, Razón Social, Montos
+ Ajustar patrones regex si es necesario
+Archivos a modificar:
+config.json
+app/ocr_processor.py (quitar modo MOCK)
+Comandos de prueba:
+PowerShell
+# Verificar credenciales
+python -c "from app.ocr_processor import ocr_processor; print('OK' if ocr_processor.client else 'FAIL')"
+
+# Probar importación
+python gui/main.py
+2. INTEGRACIÓN WHATSAPP BOT → GUI ⭐⭐⭐
+Tareas:
+ Identificar dónde el bot guarda facturas en Firebase
+ Verificar que usa /ocr_invoices/ collection
+ Asegurar compatibilidad de estructura de datos
+ Probar que facturas del bot aparezcan en Dashboard
+ Agregar indicador de origen (WhatsApp vs Manual)
+Verificaciones:
+Python
+# Estructura esperada en /ocr_invoices/:
+{
+  'company_id': int,
+  'ncf': str,
+  'rnc': str,
+  'razon_social': str,
+  'fecha_emision': datetime,
+  'subtotal': float,
+  'itbis': float,
+  'total': float,
+  'estado': 'pendiente' | 'revisada' | 'exportada',
+  'whatsapp_message_id': str,  # o 'manual_...'
+  'phone_number': str,  # opcional (solo WhatsApp)
+  '_manual_import': bool  # opcional (solo manual)
+}
+3. DETALLES UI PENDIENTES ⭐⭐
+3.1 Dashboard:
+ Icono refresh debe ser carácter Unicode ↻ (verificar que se vea)
+ Tabs deben ser visibles (ya corregido, verificar)
+ Agregar loading spinner al cargar empresas
+ Mejorar feedback visual al seleccionar empresa
+3.2 Exportador:
+ Verificar dropdown de empresa con fondo blanco (ya corregido)
+ Agregar confirmación antes de exportar
+ Mostrar progress bar durante exportación
+ Mensaje de éxito con ruta del archivo exportado
+3.3 Importador Manual:
+ Mejorar preview de imagen (más grande)
+ Agregar validación de formato de imagen
+ Permitir editar datos OCR antes de importar
+ Agregar botón "Cancelar" durante procesamiento
+4. EDITOR DE FACTURAS ⭐⭐
+Crear pantalla de edición:
+ Diseñar formulario de edición
+ Campos: NCF, RNC, Razón Social, Fecha, Subtotal, ITBIS, Total
+ Botón "Guardar" y "Cancelar"
+ Validaciones de campos
+ Cambiar estado: Pendiente → Revisada
+Archivo a crear:
+gui/screens/editor.py (ya existe, necesita implementación)
+Conectar con Dashboard:
+Python
+# En dashboard.py, doble click en factura
+self.factura_table.factura_double_clicked.connect(self.open_editor)
+
+# En app.py
+def open_editor(self, empresa_id, factura_id):
+    self.editor.load_factura(empresa_id, factura_id)
+    self.stacked_widget.setCurrentWidget(self.editor)
+5. EXPORTACIONES - AFINACIÓN ⭐⭐
+5.1 Validaciones:
+ No permitir exportar facturas con campos vacíos
+ Validar NCF (formato B01... o E31...)
+ Validar RNC (9 u 11 dígitos)
+ Verificar que Total = Subtotal + ITBIS
+5.2 Formatos de exportación:
+ CSV: Verificar encoding UTF-8 con BOM
+ JSON: Pretty print con indent=2
+ Ambos: Generar 2 archivos
+5.3 Naming convention:
+Code
+Formato: {empresa}_{fecha}_{cantidad}.{ext}
+
+Ejemplos:
+- Barnhouse_Services_2026-02-12_5facturas.csv
+- Zoec_Civil_2026-02-12_12facturas.json
+5.4 Post-exportación:
+ Marcar facturas como exportada: true
+ Actualizar estado a 'exportada'
+ Mover a carpeta data/exports/{año}/{mes}/
+ Refresh automático del dashboard
+6. FIREBASE - MANDATOS DIRECTOS ⭐⭐⭐
+Operaciones a implementar:
+6.1 Actualizar estado de factura:
+
+Python
+# app/firebase_handler.py
+def update_factura_estado(self, factura_id: str, estado: str):
+    """
+    Update invoice status
+    Args:
+        factura_id: Document ID
+        estado: 'pendiente' | 'revisada' | 'exportada'
+    """
+    self.db.collection('ocr_invoices').document(factura_id).update({
+        'estado': estado,
+        'updated_at': datetime.now()
+    })
+6.2 Actualizar campos de factura:
+
+Python
+def update_factura_fields(self, factura_id: str, fields: Dict):
+    """Update specific invoice fields"""
+    fields['updated_at'] = datetime.now()
+    self.db.collection('ocr_invoices').document(factura_id).update(fields)
+6.3 Eliminar factura:
+
+Python
+def delete_factura(self, factura_id: str):
+    """Delete invoice (soft delete)"""
+    self.db.collection('ocr_invoices').document(factura_id).update({
+        'deleted': True,
+        'deleted_at': datetime.now()
+    })
+    # O eliminación permanente:
+    # self.db.collection('ocr_invoices').document(factura_id).delete()
+6.4 Marcar múltiples como exportadas:
+
+Python
+def mark_facturas_exportadas(self, factura_ids: List[str]):
+    """Mark multiple invoices as exported"""
+    batch = self.db.batch()
+    for factura_id in factura_ids:
+        ref = self.db.collection('ocr_invoices').document(factura_id)
+        batch.update(ref, {
+            'estado': 'exportada',
+            'exportada': True,
+            'exported_at': datetime.now()
+        })
+    batch.commit()
+7. MEJORAS DE RENDIMIENTO ⭐
+ Cachear lista de empresas (no recargar cada vez)
+ Pagination en tabla de facturas (mostrar 50 por página)
+ Lazy loading de imágenes
+ Debounce en búsqueda (300ms delay)
+8. MANEJO DE ERRORES ⭐
+ Diálogo de error más amigable
+ Log de errores a archivo logs/app.log
+ Retry automático para Firebase (3 intentos)
+ Mensaje cuando no hay conexión a Internet
+🎨 MEJORAS VISUALES OPCIONALES:
+Prioridad Media:
+ Logo de la app en sidebar
+ Animaciones de transición entre pantallas
+ Tooltips en todos los botones
+ Dark mode toggle
+ Gráficos de resumen (Chart.js o matplotlib)
+Dashboard - Estadísticas:
+Code
+┌─────────────────────────────────────┐
+│  📊 Resumen                         │
+├─────────────────────────────────────┤
+│  Total facturas: 156                │
+│  Pendientes: 89                     │
+│  Revisadas: 52                      │
+│  Exportadas: 15                     │
+│                                     │
+│  Total a exportar: DOP 1,234,567.89│
+└─────────────────────────────────────┘
+📝 NOTAS TÉCNICAS IMPORTANTES:
+1. Estructura de Firestore (VERIFICAR):
+Code
+facot-app/
+├── companies/              # Empresas
+│   ├── comp_1/
+│   │   ├── name: "Barnhouse Services Srl"
+│   │   └── rnc: "..."
+│   └── comp_2/
+│
+└── ocr_invoices/          # Facturas OCR
+    ├── doc_abc123/
+    │   ├── company_id: 1
+    │   ├── ncf: "B0100000175"
+    │   ├── estado: "pendiente"
+    │   └── ...
+    └── doc_xyz789/
+2. Estados de factura:
+Python
+ESTADOS = {
+    'pendiente': 'Necesita revisión',
+    'revisada': 'Lista para exportar',
+    'exportada': 'Ya exportada'
+}
+3. Prioridad de campos OCR:
+Python
+CAMPOS_REQUERIDOS = ['ncf', 'rnc', 'total']
+CAMPOS_OPCIONALES = ['razon_social', 'fecha_emision', 'subtotal', 'itbis']
+🚀 ORDEN DE EJECUCIÓN MAÑANA:
+FASE 1: INTEGRACIÓN (2-3 horas)
+Configurar Google Cloud Vision credentials
+Probar OCR real con importador manual
+Integrar facturas del bot de WhatsApp
+Verificar que aparezcan en Dashboard
+FASE 2: EDITOR (1-2 horas)
+Implementar pantalla de edición
+Conectar doble-click → Editor
+Guardar cambios en Firebase
+FASE 3: EXPORTACIÓN (1-2 horas)
+Afinar validaciones
+Mejorar formatos CSV/JSON
+Post-exportación (marcar como exportadas)
+FASE 4: PULIR UI (1 hora)
+Corregir detalles visuales
+Testing completo
+Documentar flujos
+📂 ARCHIVOS CLAVE A MODIFICAR MAÑANA:
+Code
+LECTOR-NCF/
+├── config.json                        # ← Credenciales
+├── credentials/
+│   └── google-cloud-vision.json      # ← Copiar del bot
+│
+├── app/
+│   ├── ocr_processor.py              # ← Quitar MOCK
+│   ├── firebase_handler.py           # ← Nuevos métodos
+│   └── export_handler.py             # ← Mejorar exportación
+│
+└── gui/
+    ├── screens/
+    │   ├── dashboard.py              # ← Agregar loading
+    │   ├── editor.py                 # ← Implementar completo
+    │   └── export.py                 # ← Validaciones
+    │
+    └── dialogs/
+        └── import_dialog.py          # ← Edición pre-import
+🧪 CHECKLIST DE TESTING:
+Antes de terminar mañana, probar:
+ Importar factura manual con OCR real
+ Ver factura del bot en Dashboard
+ Editar factura pendiente → Marcar como revisada
+ Exportar 5 facturas revisadas a CSV
+ Verificar que se marquen como exportadas
+ Eliminar una factura
+ Búsqueda por NCF
+ Filtrar por empresa
+ Cambiar entre tabs (Todas, Pendientes, etc.)
+ Refresh del dashboard
+💡 IDEAS DE MEJORAS FUTURAS:
+Corto plazo (próxima semana):
+Importación por email (Gmail API)
+Backup automático a Google Drive
+Notificaciones push cuando llegue factura nueva
+Exportación a Excel (XLSX)
+Mediano plazo:
+Multi-usuario con roles (admin, contador, usuario)
+Historial de cambios (audit log)
+API REST para integraciones
+Reportes mensuales automáticos
+Largo plazo:
+Machine Learning para mejorar OCR
+Reconocimiento de proveedores recurrentes
+Integración con sistemas contables (QuickBooks, SAP)
+App móvil (React Native)
+📞 CONTACTOS ÚTILES:
+Google Cloud Support: https://console.cloud.google.com/support
+Firebase Docs: https://firebase.google.com/docs/firestore
+PyQt6 Docs: https://www.riverbankcomputing.com/static/Docs/PyQt6/
+🎯 OBJETIVO FINAL DE MAÑANA:
+Sistema completamente funcional donde:
+
+✅ Bot de WhatsApp envía facturas → Firebase
+✅ GUI lee facturas del bot y permite importar manualmente
+✅ Usuario puede editar, revisar y exportar
+✅ OCR real extrae datos de imágenes
+✅ Todo sincronizado en tiempo real
+📌 RECORDATORIOS:
+ Hacer commit de los cambios de hoy
+ Backup de Firebase antes de modificaciones
+ Probar en un entorno limpio (otra PC si es posible)
+ Documentar decisiones importantes
+¡Excelente progreso hoy! Mañana completamos la integración completa. 🚀🎉
+
+COMANDO PARA GUARDAR PROGRESO:
+PowerShell
+git add .
+git commit -m "feat: Dashboard, Exportador e Importador Manual funcionales
+
+- Dashboard con 8 empresas y filtros por estado
+- Exportador rediseñado con header compacto
+- Importador manual con OCR (modo MOCK temporal)
+- Tabla de facturas con 8 columnas
+- Búsqueda y suma correcta de totales
+- Pendiente: Integrar Google Vision API y WhatsApp bot"
+
+git push origin main

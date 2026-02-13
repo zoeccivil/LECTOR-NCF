@@ -1,8 +1,9 @@
 """
-Main application window for LECTOR-NCF GUI
+Main application window for LECTOR-NCF GUI - Redesigned
 """
-from PyQt6.QtWidgets import QMainWindow, QStackedWidget
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont
 import sys
 import os
 
@@ -10,14 +11,31 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from gui.screens import DashboardScreen, EditorScreen, ExporterScreen
+from gui.utils.styles import GLOBAL_STYLES
 
 
 class LectorNCFApp(QMainWindow):
-    """Main application window"""
+    """Main application window - Redesigned with modern theme"""
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("LECTOR-NCF - Gestión de Facturas")
+        self.setWindowTitle("LECTOR-NCF - Gestión de Facturas OCR")
+        
+        # Set window icon (optional, might fail if icon helper not available)
+        try:
+            from gui.utils.icon_helper import IconHelper
+            from gui.utils.theme import COLORS
+            icon = IconHelper.get_icon('ocr', COLORS['PRIMARY'], 48)
+            self.setWindowIcon(icon)
+        except:
+            pass  # Icon might not be available yet
+        
+        # Set minimum size and default size
+        self.setMinimumSize(1200, 700)
+        self.resize(1400, 900)
+        
+        # Apply global stylesheet
+        self.setStyleSheet(GLOBAL_STYLES)
         
         # Stacked widget for navigation
         self.stacked_widget = QStackedWidget()
@@ -39,9 +57,94 @@ class LectorNCFApp(QMainWindow):
         self.editor.back_requested.connect(self.show_dashboard)
         self.exporter.back_requested.connect(self.show_dashboard)
         
+        # Create menu bar
+        self._create_menu_bar()
+        
         # Show dashboard
         self.show_dashboard()
-    
+
+    def _create_menu_bar(self):
+        """Create application menu bar"""
+        menubar = self.menuBar()
+        
+        # Style menu bar
+        menubar.setStyleSheet("""
+            QMenuBar {
+                background-color: #FFFFFF;
+                color: #111827;
+                border-bottom: 1px solid #E5E7EB;
+                padding: 4px;
+                font-size: 13px;
+            }
+            QMenuBar::item {
+                background-color: transparent;
+                padding: 6px 12px;
+                color: #111827;
+            }
+            QMenuBar::item:selected {
+                background-color: #F3F4F6;
+                border-radius: 4px;
+            }
+            QMenu {
+                background-color: #FFFFFF;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+                padding: 4px;
+                color: #111827;
+            }
+            QMenu::item {
+                padding: 8px 24px;
+                border-radius: 4px;
+                color: #111827;
+            }
+            QMenu::item:selected {
+                background-color: #EFF6FF;
+                color: #2563EB;
+            }
+        """)
+        
+        # Menú Archivo
+        file_menu = menubar.addMenu("&Archivo")
+        
+        # Acción Salir
+        exit_action = file_menu.addAction("🚪 Salir")
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        
+        # Menú Configuración
+        config_menu = menubar.addMenu("&Configuración")
+        
+        # Acción Configurar credenciales
+        config_action = config_menu.addAction("⚙️ Configurar credenciales...")
+        config_action.triggered.connect(self._open_config_dialog)
+
+    def _open_config_dialog(self):
+        """Open configuration dialog"""
+        try:
+            from gui.dialogs.config_dialog import ConfigDialog
+            from PyQt6.QtWidgets import QDialog
+            
+            dialog = ConfigDialog(self, first_time=False)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                reply = QMessageBox.question(
+                    self,
+                    "Configuración actualizada",
+                    "La configuración se ha guardado correctamente.\n\n"
+                    "Los cambios se aplicarán al reiniciar la aplicación.\n"
+                    "¿Deseas cerrar la aplicación ahora?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.close()
+        except ImportError:
+            QMessageBox.warning(
+                self,
+                "Diálogo no disponible",
+                "El diálogo de configuración no está implementado aún."
+            )
+
     def show_dashboard(self):
         """Show dashboard screen"""
         self.stacked_widget.setCurrentWidget(self.dashboard)
@@ -58,12 +161,13 @@ class LectorNCFApp(QMainWindow):
         self.editor.load_factura(empresa_id, factura_id)
         self.stacked_widget.setCurrentWidget(self.editor)
     
-    def open_exporter(self, empresa_id: str):
-        """
-        Open exporter screen
-        
-        Args:
-            empresa_id: Empresa document ID
-        """
-        self.exporter.load_empresa(empresa_id)
+    def open_exporter(self, empresa_id: str = None):
+        """Open exporter screen"""
         self.stacked_widget.setCurrentWidget(self.exporter)
+        
+        if empresa_id:
+            # ✅ Modo automático: empresa pre-seleccionada, solo revisadas
+            self.exporter.load_for_empresa(empresa_id)
+        else:
+            # Modo manual: usuario elige empresa
+            self.exporter.load_empresas()

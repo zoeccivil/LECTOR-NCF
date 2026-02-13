@@ -2,6 +2,7 @@
 
 # Core GUI Framework
 PyQt6>=6.6.0
+PyQt6-SVG>=6.6.0
 
 # Image Processing
 Pillow>=10.0.0
