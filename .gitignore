@@ -1,3 +1,13 @@
+# Credentials
+config.json
+credentials/
+*.json
+!requirements.txt
+!render.yaml
+!package.json
+!firebase-example.json
+!google-cloud-example.json
+
 # Python
 __pycache__/
 *.py[cod]
@@ -27,6 +37,7 @@ env/
 ENV/
 env.bak/
 venv.bak/
+.venv
 
 # IDE
 .vscode/
@@ -39,12 +50,6 @@ venv.bak/
 # Environment Variables
 .env
 .env.local
-
-# Credentials
-*.json
-!firebase-example.json
-!google-cloud-example.json
-credentials/
 
 # Data
 data/temp/*
@@ -74,3 +79,7 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Ngrok
+ngrok.exe
+ngrok.yml

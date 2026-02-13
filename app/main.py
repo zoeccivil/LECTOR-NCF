@@ -238,4 +238,8 @@ async def whatsapp_webhook(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=settings.debug)
+    import os
+    
+    # Usar PORT de Render si está disponible
+    port = int(os.environ.get("PORT", settings.port))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=settings.debug)
