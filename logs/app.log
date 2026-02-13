@@ -1,0 +1,412 @@
+2026-02-11 19:39:02 | WARNING  | app.firebase_handler:__init__:27 - Firebase credentials not configured
+2026-02-11 19:39:02 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 19:39:03 | WARNING  | app.firebase_handler:get_empresas:115 - Firebase not initialized
+2026-02-11 19:40:09 | WARNING  | app.firebase_handler:__init__:27 - Firebase credentials not configured
+2026-02-11 19:40:09 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 19:40:11 | WARNING  | app.firebase_handler:get_empresas:115 - Firebase not initialized
+2026-02-11 22:38:00 | WARNING  | app.firebase_handler:__init__:27 - Firebase credentials not configured
+2026-02-11 22:38:00 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 22:43:58 | WARNING  | app.firebase_handler:get_empresas:115 - Firebase not initialized
+2026-02-11 22:45:44 | WARNING  | app.firebase_handler:__init__:27 - Firebase credentials not configured
+2026-02-11 22:45:44 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 22:45:44 | WARNING  | app.firebase_handler:get_empresas:115 - Firebase not initialized
+2026-02-11 22:57:52 | INFO     | app.firebase_handler:__init__:48 - Firebase Firestore initialized successfully
+2026-02-11 22:57:52 | INFO     | app.firebase_handler:__init__:49 - Project: facot-app
+2026-02-11 22:57:52 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 22:57:53 | INFO     | app.firebase_handler:get_empresas:158 - Loaded 0 empresas
+2026-02-11 22:58:12 | INFO     | app.firebase_handler:__init__:48 - Firebase Firestore initialized successfully
+2026-02-11 22:58:12 | INFO     | app.firebase_handler:__init__:49 - Project: facot-app
+2026-02-11 22:58:12 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 22:58:13 | INFO     | app.firebase_handler:get_empresas:158 - Loaded 0 empresas
+2026-02-11 23:20:54 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-11 23:20:54 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-11 23:20:54 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-11 23:20:54 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 23:20:56 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-11 23:20:56 | ERROR    | app.firebase_handler:get_facturas_by_empresa:199 - Error getting facturas for empresa comp_1: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Ckpwcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2ludm9pY2VzL2luZGV4ZXMvXxABGg4KCmNvbXBhbnlfaWQQARoQCgxpbnZvaWNlX2RhdGUQAhoMCghfX25hbWVfXxAC
+2026-02-11 23:24:37 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-11 23:24:37 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-11 23:24:37 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-11 23:24:37 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-11 23:24:38 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-11 23:24:39 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-11 23:24:56 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 83 facturas for empresa comp_2
+2026-02-11 23:24:56 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-11 23:24:57 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 74 facturas for empresa comp_3
+2026-02-12 00:01:44 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:01:44 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:01:44 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:01:44 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:01:46 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:01:46 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 00:06:43 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:06:43 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:06:43 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:06:43 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:06:45 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:06:45 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:06:45 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_1: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL18QARoOCgpjb21wYW55X2lkEAEaEAoMcHJvY2Vzc2VkX2F0EAIaDAoIX19uYW1lX18QAg
+2026-02-12 00:07:09 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_1: 400 The query requires an index. That index is currently building and cannot be used yet. See its status here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Cllwcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL0NJQ0FnTGp5OElBSxABGg4KCmNvbXBhbnlfaWQQARoQCgxwcm9jZXNzZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-02-12 00:07:11 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_2: 400 The query requires an index. That index is currently building and cannot be used yet. See its status here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Cllwcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL0NJQ0FnTGp5OElBSxABGg4KCmNvbXBhbnlfaWQQARoQCgxwcm9jZXNzZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-02-12 00:07:11 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_3: 400 The query requires an index. That index is currently building and cannot be used yet. See its status here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Cllwcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL0NJQ0FnTGp5OElBSxABGg4KCmNvbXBhbnlfaWQQARoQCgxwcm9jZXNzZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-02-12 00:07:15 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_3: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL18QARoOCgpjb21wYW55X2lkEAEaCgoGZXN0YWRvEAEaEAoMcHJvY2Vzc2VkX2F0EAIaDAoIX19uYW1lX18QAg
+2026-02-12 00:07:15 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_3: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL18QARoOCgpjb21wYW55X2lkEAEaCgoGZXN0YWRvEAEaEAoMcHJvY2Vzc2VkX2F0EAIaDAoIX19uYW1lX18QAg
+2026-02-12 00:07:16 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_3: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL18QARoOCgpjb21wYW55X2lkEAEaCgoGZXN0YWRvEAEaEAoMcHJvY2Vzc2VkX2F0EAIaDAoIX19uYW1lX18QAg
+2026-02-12 00:07:19 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_3: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL18QARoOCgpjb21wYW55X2lkEAEaEAoMcHJvY2Vzc2VkX2F0EAIaDAoIX19uYW1lX18QAg
+2026-02-12 00:07:25 | ERROR    | app.firebase_handler:get_ocr_facturas_by_empresa:563 - Error getting OCR facturas for empresa comp_4: 400 The query requires an index. That index is currently building and cannot be used yet. See its status here: https://console.firebase.google.com/v1/r/project/facot-app/firestore/indexes?create_composite=Cllwcm9qZWN0cy9mYWNvdC1hcHAvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL29jcl9pbnZvaWNlcy9pbmRleGVzL0NJQ0FnTGp5OElBSxABGg4KCmNvbXBhbnlfaWQQARoQCgxwcm9jZXNzZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-02-12 00:12:56 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:12:56 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:12:56 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:12:56 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:12:58 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:12:58 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:12:58 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:559 - Loaded 0 OCR facturas for empresa comp_1
+2026-02-12 00:17:09 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:17:09 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:17:09 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:17:09 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:17:11 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:17:11 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:559 - Loaded 0 OCR facturas for empresa comp_1
+2026-02-12 00:17:11 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:17:17 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:559 - Loaded 0 OCR facturas for empresa comp_2
+2026-02-12 00:17:21 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:559 - Loaded 0 OCR facturas for empresa comp_4
+2026-02-12 00:17:22 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:559 - Loaded 0 OCR facturas for empresa comp_5
+2026-02-12 00:17:23 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:559 - Loaded 0 OCR facturas for empresa comp_1
+2026-02-12 00:21:22 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:21:22 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:21:22 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:21:22 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:21:24 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:21:24 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:21:24 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:25:20 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:25:20 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:25:20 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:25:20 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:25:22 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:25:22 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:25:22 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:28:02 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 4 OCR facturas for empresa comp_1 (estado: exportada)
+2026-02-12 00:28:10 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 00:28:17 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:28:51 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:28:51 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:28:51 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:28:51 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:28:53 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:28:53 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:28:53 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:29:36 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 11 OCR facturas for empresa comp_1 (estado: pendiente)
+2026-02-12 00:29:37 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 00:29:38 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 4 OCR facturas for empresa comp_1 (estado: exportada)
+2026-02-12 00:29:42 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:29:51 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:30:26 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:30:26 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:30:26 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:30:26 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:30:28 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:30:28 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:30:28 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:31:23 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:35:34 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:35:34 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:35:34 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:35:34 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:39:09 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:39:09 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:39:09 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:39:09 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:39:52 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:39:52 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:39:52 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:39:52 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:41:46 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:41:46 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:41:46 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:41:46 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:42:38 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:42:38 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:42:38 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:42:38 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:42:41 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:42:41 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:42:41 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:42:44 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 4 OCR facturas for empresa comp_1 (estado: exportada)
+2026-02-12 00:46:44 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:46:44 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:46:44 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:46:44 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:46:46 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:46:46 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:46:46 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:49:14 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:49:14 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:49:14 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:49:14 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:49:16 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:49:16 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:49:16 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:49:18 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:49:18 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 00:52:24 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 00:52:24 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 00:52:24 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 00:52:24 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 00:52:26 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:52:27 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:52:27 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 00:52:29 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 00:52:29 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 00:52:39 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 3 OCR facturas for empresa comp_3 (estado: revisada)
+2026-02-12 00:52:42 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_6 (estado: revisada)
+2026-02-12 01:03:04 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 01:03:04 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 01:03:04 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 01:03:04 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 01:03:06 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:03:06 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:03:06 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 01:03:16 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:03:17 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:03:17 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:03:28 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:03:36 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:03:37 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:03:37 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:08:03 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 01:08:03 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 01:08:03 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 01:08:03 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 01:08:05 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:08:05 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:08:06 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 01:08:08 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:08:09 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:08:09 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:08:20 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:08:25 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:08:26 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:08:26 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:10:55 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:11:27 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:13:40 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 01:13:40 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 01:13:40 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 01:13:40 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 01:13:42 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:13:42 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:13:42 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 01:13:53 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:13:54 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:13:54 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 01:14:11 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:22:33 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 01:22:33 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 01:22:33 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 01:22:33 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 01:22:35 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:22:35 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 01:22:36 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:22:50 | ERROR    | app.ocr_processor:__init__:26 - Failed to initialize Google Cloud Vision client: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-02-12 01:26:58 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 01:26:58 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 01:26:58 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 01:26:58 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 01:27:00 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:27:00 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:27:00 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 01:27:31 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 01:27:31 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 01:27:31 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 01:27:31 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 01:27:33 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:27:33 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 01:27:33 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:27:51 | ERROR    | app.ocr_processor:__init__:26 - Failed to initialize Google Cloud Vision client: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-02-12 01:27:52 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:27:52 | ERROR    | gui.screens.dashboard:_on_import_clicked:447 - Error opening import dialog: 'list' object has no attribute 'items'
+2026-02-12 01:28:54 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 01:28:54 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 01:28:54 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 01:28:54 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 01:28:56 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:28:56 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:28:56 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 01:29:10 | ERROR    | app.ocr_processor:__init__:26 - Failed to initialize Google Cloud Vision client: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-02-12 01:29:11 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 01:29:11 | INFO     | gui.screens.dashboard:_on_import_clicked:441 - Opening import dialog with 8 empresas
+2026-02-12 01:29:57 | ERROR    | app.ocr_processor:extract_text_with_document_detection:89 - Vision client not initialized
+2026-02-12 01:29:57 | ERROR    | gui.dialogs.import_dialog:_process_ocr:297 - OCR processing error: No se pudo extraer texto de la imagen
+2026-02-12 01:30:20 | ERROR    | app.ocr_processor:extract_text_with_document_detection:89 - Vision client not initialized
+2026-02-12 01:30:20 | ERROR    | gui.dialogs.import_dialog:_process_ocr:297 - OCR processing error: No se pudo extraer texto de la imagen
+2026-02-12 21:04:35 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 21:04:35 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 21:04:35 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 21:04:35 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 21:04:39 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:04:39 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:04:39 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:04:57 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 4 OCR facturas for empresa comp_1 (estado: exportada)
+2026-02-12 21:04:59 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 21:05:00 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:05:00 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 21:05:04 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 7 OCR facturas for empresa comp_4 (estado: revisada)
+2026-02-12 21:29:35 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 21:29:35 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 21:29:35 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 21:29:35 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 21:29:38 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:29:39 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:29:39 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:29:50 | INFO     | app.ocr_processor:__init__:24 - Using Google Cloud credentials: D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json
+2026-02-12 21:29:50 | INFO     | app.ocr_processor:__init__:29 - ✅ Google Cloud Vision client initialized successfully
+2026-02-12 21:29:51 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:29:51 | INFO     | gui.screens.dashboard:_on_import_clicked:441 - Opening import dialog with 8 empresas
+2026-02-12 21:30:07 | INFO     | app.ocr_processor:extract_invoice_data:201 - Processing image with Google Cloud Vision...
+2026-02-12 21:30:07 | INFO     | app.ocr_processor:extract_text_with_document_detection:102 - Performing document text detection...
+2026-02-12 21:30:08 | INFO     | app.ocr_processor:extract_text_with_document_detection:120 - Successfully extracted 1474 characters with confidence 0.95
+2026-02-12 21:30:08 | INFO     | app.ocr_processor:extract_invoice_data:207 - OCR completed. Extracted 1474 characters with confidence 0.95
+2026-02-12 21:30:08 | WARNING  | app.ocr_processor:_extract_ncf:249 - NCF not found in text
+2026-02-12 21:30:08 | INFO     | app.ocr_processor:extract_invoice_data:228 - Invoice data extracted: NCF=None, Total=None
+2026-02-12 21:30:08 | ERROR    | gui.dialogs.import_dialog:_process_ocr:297 - OCR processing error: unsupported format string passed to NoneType.__format__
+2026-02-12 21:33:33 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 21:33:33 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 21:33:33 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 21:33:33 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 21:33:35 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:33:35 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 20 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:33:35 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:33:40 | INFO     | app.ocr_processor:__init__:24 - Using Google Cloud credentials: D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json
+2026-02-12 21:33:40 | INFO     | app.ocr_processor:__init__:29 - ✅ Google Cloud Vision client initialized successfully
+2026-02-12 21:33:41 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:33:41 | INFO     | gui.screens.dashboard:_on_import_clicked:441 - Opening import dialog with 8 empresas
+2026-02-12 21:33:49 | INFO     | app.ocr_processor:extract_invoice_data:201 - Processing image with Google Cloud Vision...
+2026-02-12 21:33:49 | INFO     | app.ocr_processor:extract_text_with_document_detection:102 - Performing document text detection...
+2026-02-12 21:33:49 | INFO     | app.ocr_processor:extract_text_with_document_detection:120 - Successfully extracted 1474 characters with confidence 0.95
+2026-02-12 21:33:49 | INFO     | app.ocr_processor:extract_invoice_data:207 - OCR completed. Extracted 1474 characters with confidence 0.95
+2026-02-12 21:33:49 | WARNING  | app.ocr_processor:_extract_ncf:266 - NCF not found in text
+2026-02-12 21:33:49 | INFO     | app.ocr_processor:extract_invoice_data:228 - Invoice data extracted: NCF=None, Total=None
+2026-02-12 21:34:41 | INFO     | app.firebase_handler:save_ocr_invoice:712 - OCR invoice saved: AFI3hCxJVmuWFXuRFvH4 (NCF: )
+2026-02-12 21:34:41 | INFO     | gui.dialogs.import_dialog:_import_invoice:386 - Invoice imported manually: AFI3hCxJVmuWFXuRFvH4
+2026-02-12 21:34:52 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:34:59 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 4 OCR facturas for empresa comp_1 (estado: exportada)
+2026-02-12 21:35:02 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 21:35:04 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 12 OCR facturas for empresa comp_1 (estado: pendiente)
+2026-02-12 21:42:45 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 21:42:45 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 21:42:45 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 21:42:45 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 21:42:47 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:42:47 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:42:47 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 21 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:42:48 | INFO     | app.ocr_processor:__init__:24 - Using Google Cloud credentials: D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json
+2026-02-12 21:42:48 | INFO     | app.ocr_processor:__init__:29 - ✅ Google Cloud Vision client initialized successfully
+2026-02-12 21:42:49 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:42:49 | INFO     | gui.screens.dashboard:_on_import_clicked:441 - Opening import dialog with 8 empresas
+2026-02-12 21:42:57 | INFO     | app.ocr_processor:extract_invoice_data:201 - Processing image with Google Cloud Vision...
+2026-02-12 21:42:57 | INFO     | app.ocr_processor:extract_text_with_document_detection:102 - Performing document text detection...
+2026-02-12 21:42:58 | INFO     | app.ocr_processor:extract_text_with_document_detection:120 - Successfully extracted 1474 characters with confidence 0.95
+2026-02-12 21:42:58 | INFO     | app.ocr_processor:extract_invoice_data:207 - OCR completed. Extracted 1474 characters with confidence 0.95
+2026-02-12 21:42:58 | WARNING  | app.ocr_processor:_extract_ncf:266 - NCF not found in text
+2026-02-12 21:42:58 | INFO     | app.ocr_processor:extract_invoice_data:228 - Invoice data extracted: NCF=None, Total=None
+2026-02-12 21:47:36 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 21:47:36 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 21:47:36 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 21:47:36 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 21:47:38 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:47:39 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:47:39 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 21 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:47:40 | INFO     | app.ocr_processor:__init__:24 - Using Google Cloud credentials: D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json
+2026-02-12 21:47:40 | INFO     | app.ocr_processor:__init__:29 - ✅ Google Cloud Vision client initialized successfully
+2026-02-12 21:47:41 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:47:41 | INFO     | gui.screens.dashboard:_on_import_clicked:441 - Opening import dialog with 8 empresas
+2026-02-12 21:47:53 | INFO     | app.ocr_processor:extract_invoice_data:201 - Processing image with Google Cloud Vision...
+2026-02-12 21:47:53 | INFO     | app.ocr_processor:extract_text_with_document_detection:102 - Performing document text detection...
+2026-02-12 21:47:54 | INFO     | app.ocr_processor:extract_text_with_document_detection:120 - Successfully extracted 1078 characters with confidence 0.98
+2026-02-12 21:47:54 | INFO     | app.ocr_processor:extract_invoice_data:207 - OCR completed. Extracted 1078 characters with confidence 0.98
+2026-02-12 21:47:54 | INFO     | app.ocr_processor:extract_invoice_data:228 - Invoice data extracted: NCF=E31000730695, Total=43143.55
+2026-02-12 21:50:34 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 21:50:34 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 21:50:34 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 21:50:34 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 21:50:36 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:50:36 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:50:36 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 21 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:50:37 | INFO     | app.ocr_processor:__init__:24 - Using Google Cloud credentials: D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json
+2026-02-12 21:50:37 | INFO     | app.ocr_processor:__init__:29 - ✅ Google Cloud Vision client initialized successfully
+2026-02-12 21:50:38 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:50:38 | INFO     | gui.screens.dashboard:_on_import_clicked:441 - Opening import dialog with 8 empresas
+2026-02-12 21:50:49 | INFO     | app.ocr_processor:extract_invoice_data:201 - Processing image with Google Cloud Vision...
+2026-02-12 21:50:49 | INFO     | app.ocr_processor:extract_text_with_document_detection:102 - Performing document text detection...
+2026-02-12 21:50:50 | INFO     | app.ocr_processor:extract_text_with_document_detection:120 - Successfully extracted 1078 characters with confidence 0.98
+2026-02-12 21:50:50 | INFO     | app.ocr_processor:extract_invoice_data:207 - OCR completed. Extracted 1078 characters with confidence 0.98
+2026-02-12 21:50:50 | INFO     | app.ocr_processor:extract_invoice_data:228 - Invoice data extracted: NCF=E31000730695, Total=43143.55
+2026-02-12 21:50:55 | INFO     | app.firebase_handler:save_ocr_invoice:712 - OCR invoice saved: N7YcgZfUQzYcNoyIH6GB (NCF: E31000730695)
+2026-02-12 21:50:55 | INFO     | gui.dialogs.import_dialog:_import_invoice:672 - Invoice imported manually: N7YcgZfUQzYcNoyIH6GB
+2026-02-12 21:51:09 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:51:19 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 4 OCR facturas for empresa comp_1 (estado: exportada)
+2026-02-12 21:51:20 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 22 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:57:36 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 21:57:36 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 21:57:36 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 21:57:36 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 21:57:39 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:57:39 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 22 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 21:57:39 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:57:40 | INFO     | app.ocr_processor:__init__:24 - Using Google Cloud credentials: D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json
+2026-02-12 21:57:40 | INFO     | app.ocr_processor:__init__:29 - ✅ Google Cloud Vision client initialized successfully
+2026-02-12 21:57:41 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:57:41 | INFO     | gui.screens.dashboard:_on_import_clicked:441 - Opening import dialog with 8 empresas
+2026-02-12 21:57:49 | INFO     | app.ocr_processor:extract_invoice_data:201 - Processing image with Google Cloud Vision...
+2026-02-12 21:57:49 | INFO     | app.ocr_processor:extract_text_with_document_detection:102 - Performing document text detection...
+2026-02-12 21:57:50 | INFO     | app.ocr_processor:extract_text_with_document_detection:120 - Successfully extracted 1078 characters with confidence 0.98
+2026-02-12 21:57:50 | INFO     | app.ocr_processor:extract_invoice_data:207 - OCR completed. Extracted 1078 characters with confidence 0.98
+2026-02-12 21:57:50 | INFO     | app.ocr_processor:extract_invoice_data:228 - Invoice data extracted: NCF=E31000730695, Total=43143.55
+2026-02-12 21:57:56 | INFO     | app.firebase_handler:save_ocr_invoice:712 - OCR invoice saved: M82MXPoXgWwDDXXu4mEC (NCF: E31000730695)
+2026-02-12 21:57:56 | INFO     | gui.dialogs.import_dialog:_import_invoice:672 - Invoice imported manually: M82MXPoXgWwDDXXu4mEC
+2026-02-12 21:58:06 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:58:07 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 14 OCR facturas for empresa comp_1 (estado: pendiente)
+2026-02-12 21:58:19 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 21:58:25 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:58:49 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 21:58:50 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:58:50 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 5 OCR facturas for empresa comp_1 (estado: revisada)
+2026-02-12 21:58:52 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:58:53 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 21:59:15 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 21:59:46 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 22:08:18 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 22:08:18 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 22:08:18 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 22:08:18 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 22:08:21 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 22:08:21 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 23 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 22:08:21 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 22:08:32 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:08:44 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 22:08:54 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:00 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:01 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:01 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:02 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:03 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:04 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:04 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:05 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:09:06 | INFO     | app.firebase_handler:get_facturas_by_empresa:195 - Loaded 374 facturas for empresa comp_1
+2026-02-12 22:12:46 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 22:12:46 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 22:12:46 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 22:12:46 | INFO     | app.export_handler:__init__:26 - Export handler initialized. Export directory: data\exports
+2026-02-12 22:12:49 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 22:12:49 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 22:12:49 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 23 OCR facturas for empresa comp_1 (estado: all)
+2026-02-12 22:17:06 | INFO     | app.whatsapp_handler:__init__:27 - Twilio WhatsApp client initialized. Sender: whatsapp:+18035909613
+2026-02-12 22:17:06 | INFO     | app.firebase_handler:__init__:33 - Firebase Firestore initialized successfully
+2026-02-12 22:17:06 | INFO     | app.firebase_handler:__init__:34 - Project: facot-app
+2026-02-12 22:17:06 | INFO     | app.firebase_handler:__init__:35 - Using adapted structure: /companies/ and /invoices/
+2026-02-12 22:17:08 | INFO     | app.firebase_handler:get_empresas:89 - Loaded 8 empresas
+2026-02-12 22:17:08 | INFO     | app.ocr_processor:__init__:24 - Using Google Cloud credentials: D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json
+2026-02-12 22:17:08 | INFO     | app.ocr_processor:__init__:29 - ✅ Google Cloud Vision client initialized successfully
+2026-02-12 22:17:08 | INFO     | app.firebase_handler:get_ocr_facturas_by_empresa:592 - Loaded 23 OCR facturas for empresa comp_1 (estado: all)
