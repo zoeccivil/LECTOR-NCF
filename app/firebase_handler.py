@@ -19,11 +19,12 @@ class FirebaseHandler:
             if settings.firebase_credentials:
                 cred = credentials.Certificate(settings.firebase_credentials)
                 firebase_admin.initialize_app(cred, {
-                    'databaseURL': 'https://facot-app-default-rtdb.firebaseio.com/'
+                    'databaseURL': settings.firebase_database_url or 'https://facot-app-default-rtdb.firebaseio.com/'
                 })
                 self.db = firestore.client()
                 app_logger.info("Firebase Firestore initialized successfully")
-                app_logger.info("Project: facot-app")
+                if settings.firebase_database_url:
+                    app_logger.info(f"Database URL: {settings.firebase_database_url}")
             else:
                 self.db = None
                 app_logger.warning("Firebase credentials not configured")

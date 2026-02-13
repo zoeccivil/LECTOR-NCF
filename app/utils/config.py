@@ -45,8 +45,6 @@ class Settings(BaseSettings):
         Load configuration from environment variables with priority over config.json
         This method is called after initialization to ensure environment variables take precedence
         """
-        import os
-        
         # Prioridad 1: Variables de entorno (para Render)
         env_firebase_creds = os.environ.get('FIREBASE_CREDENTIALS_PATH')
         env_google_creds = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
