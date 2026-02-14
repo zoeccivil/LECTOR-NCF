@@ -10,7 +10,7 @@ load_dotenv()
 
 class Settings:
     def __init__(self):
-        # Firebase
+        # Firebase2
         self.firebase_credentials = os.environ.get(
             "FIREBASE_CREDENTIALS",
             "credentials/firebase-credentials.json"
