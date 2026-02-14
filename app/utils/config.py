@@ -47,6 +47,10 @@ class Settings:
         # Server
         self.port = int(os.environ.get("PORT", 8000))
         self.debug = os.environ.get("DEBUG", "False").lower() == "true"
+        self.host = os.environ.get("HOST", "0.0.0.0")
+        
+        # Logging
+        self.log_level = os.environ.get("LOG_LEVEL", "INFO")
         
         # Additional settings
         self.google_cloud_project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_ID")
@@ -54,9 +58,7 @@ class Settings:
         self.export_format = os.environ.get("EXPORT_FORMAT", "both")
         self.csv_delimiter = os.environ.get("CSV_DELIMITER", ",")
         self.timezone = os.environ.get("TIMEZONE", "America/Santo_Domingo")
-        self.log_level = os.environ.get("LOG_LEVEL", "INFO")
         self.max_image_size_mb = int(os.environ.get("MAX_IMAGE_SIZE_MB", 10))
-        self.host = os.environ.get("HOST", "0.0.0.0")
 
 
 # Global settings instance
