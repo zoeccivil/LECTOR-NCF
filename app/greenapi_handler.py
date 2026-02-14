@@ -53,6 +53,40 @@ class GreenAPIHandler:
             app_logger.error(f"❌ Green-API error: {e}")
             return None
     
+    async def receive_notification(self) -> Optional[dict]:
+        """Receive notification using polling method"""
+        if not self.enabled:
+            return None
+        
+        try:
+            url = f"{self.base_url}/receiveNotification/{self.api_token}"
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, timeout=30.0)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if data:
+                        app_logger.info(f"📥 Polling received notification")
+                        
+                        # Eliminar notificación después de recibirla
+                        receipt_id = data.get("receiptId")
+                        if receipt_id:
+                            delete_url = f"{self.base_url}/deleteNotification/{self.api_token}/{receipt_id}"
+                            await client.delete(delete_url, timeout=10.0)
+                            app_logger.info(f"🗑️ Deleted notification: {receipt_id}")
+                        
+                        return data
+                    else:
+                        return None
+                else:
+                    return None
+        
+        except Exception as e:
+            app_logger.error(f"Error polling Green-API: {e}")
+            return None
+    
     async def send_confirmation(self, to: str):
         """Send confirmation message"""
         return await self.send_message(to, "✅ Factura recibida, procesando... ⏳")
