@@ -54,7 +54,7 @@ async def startup_event():
     os.makedirs(CREDENTIALS_DIR, exist_ok=True)
     
     if not check_firebase_credentials():
-        app_logger.warning("⚠️ FIREBASE CREDENTIALS NOT FOUND. Please visit http://localhost:8000/setup to configure them.")
+        app_logger.warning("⚠️ FIREBASE CREDENTIALS NOT FOUND. Please visit /setup to configure them.")
 
 
 @app.get("/")
@@ -69,7 +69,22 @@ async def root():
         "firebase_configured": True,
         "endpoints": {
             "webhook": "/webhook/whatsapp",
+            "status": "/webhook/status",
             "setup": "/setup"
+        }
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "firebase_configured": check_firebase_credentials(),
+        "services": {
+            "whatsapp": whatsapp_handler is not None,
+            "ocr": ocr_processor is not None,
+            "firebase": firebase_handler.db is not None if firebase_handler else False
         }
     }
 
@@ -81,35 +96,170 @@ async def root():
 @app.get("/setup", response_class=HTMLResponse)
 async def setup_page():
     """Displays the web UI to upload Firebase credentials"""
+    firebase_configured = check_firebase_credentials()
+    
     html_content = """
     <!DOCTYPE html>
     <html>
     <head>
         <title>LECTOR-NCF | Configuración</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-            body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-            .container { background-color: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
-            h2 { color: #333; }
-            .upload-box { border: 2px dashed #4CAF50; padding: 30px; margin: 20px 0; border-radius: 5px; }
-            .btn { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px;}
-            .btn:hover { background-color: #45a049; }
-            .success { color: green; font-weight: bold; margin-top: 15px; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                min-height: 100vh; 
+                padding: 20px;
+            }
+            .container { 
+                background-color: white; 
+                padding: 40px; 
+                border-radius: 15px; 
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
+                width: 100%; 
+                max-width: 550px; 
+                text-align: center;
+                animation: fadeIn 0.5s ease-in;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            h2 { 
+                color: #333; 
+                margin-bottom: 10px;
+                font-size: 28px;
+            }
+            .subtitle {
+                color: #666;
+                margin-bottom: 30px;
+                font-size: 14px;
+            }
+            .status-badge {
+                display: inline-block;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: bold;
+                margin-bottom: 20px;
+            }
+            .status-success {
+                background-color: #d4edda;
+                color: #155724;
+            }
+            .status-warning {
+                background-color: #fff3cd;
+                color: #856404;
+            }
+            .upload-box { 
+                border: 2px dashed #667eea; 
+                padding: 30px; 
+                margin: 20px 0; 
+                border-radius: 10px;
+                background-color: #f8f9ff;
+                transition: all 0.3s ease;
+            }
+            .upload-box:hover {
+                border-color: #764ba2;
+                background-color: #f0f2ff;
+            }
+            input[type="file"] {
+                width: 100%;
+                padding: 10px;
+                cursor: pointer;
+            }
+            input[type="text"] {
+                width: 100%; 
+                padding: 12px; 
+                margin-bottom: 15px; 
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 14px;
+                transition: border-color 0.3s ease;
+            }
+            input[type="text"]:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+            .btn { 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white; 
+                padding: 14px 20px; 
+                border: none; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px; 
+                width: 100%; 
+                margin-top: 10px;
+                font-weight: bold;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .btn:hover { 
+                transform: translateY(-2px);
+                box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            }
+            .btn:active {
+                transform: translateY(0);
+            }
+            .info-box {
+                background-color: #e8f4f8;
+                border-left: 4px solid #17a2b8;
+                padding: 15px;
+                margin: 20px 0;
+                text-align: left;
+                border-radius: 5px;
+            }
+            .info-box strong {
+                color: #17a2b8;
+            }
+            .footer {
+                margin-top: 30px;
+                color: #999;
+                font-size: 12px;
+            }
         </style>
     </head>
     <body>
         <div class="container">
-            <h2>🔥 Configuración de Firebase</h2>
-            <p>El sistema requiere el archivo <b>firebase-credentials.json</b> para funcionar.</p>
+            <h2>🔥 LECTOR-NCF</h2>
+            <p class="subtitle">Sistema de Lectura OCR de Facturas</p>
+            
+            """ + (
+                '<div class="status-badge status-success">✅ Firebase Configurado</div>' 
+                if firebase_configured else 
+                '<div class="status-badge status-warning">⚠️ Configuración Pendiente</div>'
+            ) + """
+            
+            <div class="info-box">
+                <strong>📋 Requisitos:</strong><br>
+                • Archivo <code>firebase-credentials.json</code><br>
+                • URL de Firebase Database<br>
+                • Permisos de administrador
+            </div>
             
             <form action="/setup/upload" method="post" enctype="multipart/form-data">
                 <div class="upload-box">
+                    <p style="margin-bottom: 15px; color: #666;">📁 Selecciona tu archivo JSON</p>
                     <input type="file" name="file" accept=".json" required>
                 </div>
-                <input type="text" name="database_url" placeholder="URL de la Base de Datos (ej. https://...firebaseio.com)" required style="width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box;">
+                <input 
+                    type="text" 
+                    name="database_url" 
+                    placeholder="https://tu-proyecto.firebaseio.com" 
+                    required
+                    """ + (f'value="{settings.firebase_database_url}"' if firebase_configured and hasattr(settings, 'firebase_database_url') else '') + """
+                >
                 <button type="submit" class="btn">💾 Guardar y Conectar</button>
             </form>
             
-            """ + (f"<div class='success'>✅ Credenciales configuradas. El servidor está listo.</div>" if check_firebase_credentials() else "") + """
+            <div class="footer">
+                <p>LECTOR-NCF v1.0.0 | © 2026 ZOEC CIVIL</p>
+            </div>
         </div>
     </body>
     </html>
@@ -143,12 +293,15 @@ async def upload_credentials(file: UploadFile = File(...), database_url: str = F
         settings.firebase_credentials = str(FIREBASE_CRED_PATH)
         settings.firebase_database_url = database_url
         firebase_handler.__init__()
+        
+        app_logger.info("✅ Firebase credentials uploaded and initialized successfully")
 
         return RedirectResponse(url="/setup", status_code=303)
         
     except Exception as e:
         app_logger.error(f"Error saving credentials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # ==========================================
 # WHATSAPP WEBHOOK
@@ -248,9 +401,38 @@ async def whatsapp_webhook(
             pass
         return Response(content="", status_code=200)
 
+
+# ==========================================
+# STATUS WEBHOOK
+# ==========================================
+
+@app.post("/webhook/status")
+async def whatsapp_status(request: Request):
+    """Receive WhatsApp message status updates from Twilio"""
+    try:
+        form_data = await request.form()
+        message_sid = form_data.get("MessageSid")
+        message_status = form_data.get("MessageStatus")
+        error_code = form_data.get("ErrorCode")
+        error_message = form_data.get("ErrorMessage")
+        
+        if error_code:
+            app_logger.error(f"Message {message_sid} failed - Code: {error_code}, Message: {error_message}")
+        else:
+            app_logger.info(f"Message status update - SID: {message_sid}, Status: {message_status}")
+        
+        return Response(content="", status_code=200)
+    except Exception as e:
+        app_logger.error(f"Error processing status webhook: {e}")
+        return Response(content="", status_code=200)
+
+
+# ==========================================
+# RUN SERVER
+# ==========================================
+
 if __name__ == "__main__":
     import uvicorn
-    import os
     
     # Usar PORT de Render si está disponible
     port = int(os.environ.get("PORT", settings.port))
