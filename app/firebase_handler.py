@@ -2,9 +2,14 @@
 Firebase integration handler
 """
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, db
 from typing import Optional, Dict, List
 from datetime import datetime
+from pathlib import Path
+import base64
+import json
+import tempfile
+import os
 from app.models import Invoice
 from app.utils.logger import app_logger
 from app.utils.config import settings
@@ -14,26 +19,67 @@ class FirebaseHandler:
     """Handles Firebase Firestore operations"""
     
     def __init__(self):
-        """Initialize Firebase app"""
+        """Initialize Firebase"""
         try:
-            if settings.firebase_credentials:
-                cred = credentials.Certificate(settings.firebase_credentials)
+            # Check if already initialized
+            try:
+                firebase_admin.get_app()
+                app_logger.info("Firebase app already initialized, using existing instance")
+            except ValueError:
+                cred = None
+                
+                # OPTION 1: Use Base64 from environment (PRODUCTION)
+                creds_base64 = os.environ.get("FIREBASE_CREDENTIALS_BASE64")
+                
+                if creds_base64:
+                    try:
+                        # Decode Base64
+                        creds_json = base64.b64decode(creds_base64).decode('utf-8')
+                        creds_dict = json.loads(creds_json)
+                        
+                        # Create temporary file
+                        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                            json.dump(creds_dict, f)
+                            temp_cred_path = f.name
+                        
+                        cred = credentials.Certificate(temp_cred_path)
+                        app_logger.info("✅ Using Firebase credentials from Base64 environment variable")
+                        
+                        # Clean up temp file
+                        os.unlink(temp_cred_path)
+                    except Exception as e:
+                        app_logger.error(f"Failed to decode Base64 credentials: {e}")
+                
+                # OPTION 2: Use file path (LOCAL DEVELOPMENT)
+                if cred is None and settings.firebase_credentials:
+                    cred_path = Path(settings.firebase_credentials)
+                    if cred_path.exists():
+                        cred = credentials.Certificate(str(cred_path))
+                        app_logger.info("✅ Using Firebase credentials from file")
+                
+                if cred is None:
+                    app_logger.error("❌ No Firebase credentials found (checked env var and file)")
+                    self.db = None
+                    self.firestore_db = None
+                    return
+                
+                # Initialize Firebase
                 firebase_admin.initialize_app(cred, {
-                    'databaseURL': 'https://facot-app-default-rtdb.firebaseio.com/'
+                    'databaseURL': settings.firebase_database_url
                 })
-                self.db = firestore.client()
+                
                 app_logger.info("Firebase Firestore initialized successfully")
-                app_logger.info("Project: facot-app")
-            else:
-                self.db = None
-                app_logger.warning("Firebase credentials not configured")
-        except ValueError as e:
-            # Firebase app already initialized
-            app_logger.info("Firebase app already initialized, using existing instance")
-            self.db = firestore.client()
+            
+            # Get references
+            self.db = db.reference()
+            self.firestore_db = firestore.client()
+            
+            app_logger.info(f"Database URL: {settings.firebase_database_url}")
+            
         except Exception as e:
             app_logger.error(f"Failed to initialize Firebase: {e}")
             self.db = None
+            self.firestore_db = None
     
     def save_invoice(self, invoice: Invoice, empresa_id: Optional[str] = None) -> bool:
         """
@@ -46,7 +92,7 @@ class FirebaseHandler:
         Returns:
             True if saved successfully
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return False
         
@@ -79,7 +125,7 @@ class FirebaseHandler:
             }
             
             # Save to: facturas/{empresa_id}/items/{invoice_id}
-            factura_ref = self.db.collection('facturas').document(empresa_id).collection('items').document(invoice.id)
+            factura_ref = self.firestore_db.collection('facturas').document(empresa_id).collection('items').document(invoice.id)
             factura_ref.set(invoice_data)
             
             app_logger.info(f"Invoice saved to Firestore: {invoice.id} (Empresa: {empresa_id})")
@@ -108,7 +154,7 @@ class FirebaseHandler:
             razon_social: Business name
         """
         try:
-            empresa_ref = self.db.collection('empresas').document(empresa_id)
+            empresa_ref = self.firestore_db.collection('empresas').document(empresa_id)
             empresa_doc = empresa_ref.get()
             
             if not empresa_doc.exists:
@@ -141,7 +187,7 @@ class FirebaseHandler:
             empresa_id: Empresa ID
         """
         try:
-            provider_ref = self.db.collection('proveedores').document(rnc)
+            provider_ref = self.firestore_db.collection('proveedores').document(rnc)
             provider_doc = provider_ref.get()
             
             if provider_doc.exists:
@@ -172,12 +218,12 @@ class FirebaseHandler:
         Returns:
             List of empresa dictionaries
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return []
         
         try:
-            empresas_ref = self.db.collection('empresas')
+            empresas_ref = self.firestore_db.collection('empresas')
             empresas_docs = empresas_ref.stream()
             
             empresas = []
@@ -203,12 +249,12 @@ class FirebaseHandler:
         Returns:
             List of factura dictionaries
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return []
         
         try:
-            facturas_ref = self.db.collection('facturas').document(empresa_id).collection('items')
+            facturas_ref = self.firestore_db.collection('facturas').document(empresa_id).collection('items')
             facturas_docs = facturas_ref.order_by('fecha_procesamiento', direction=firestore.Query.DESCENDING).stream()
             
             facturas = []
@@ -235,12 +281,12 @@ class FirebaseHandler:
         Returns:
             Factura dictionary or None
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return None
         
         try:
-            factura_ref = self.db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
+            factura_ref = self.firestore_db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
             factura_doc = factura_ref.get()
             
             if factura_doc.exists:
@@ -266,12 +312,12 @@ class FirebaseHandler:
         Returns:
             True if updated successfully
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return False
         
         try:
-            factura_ref = self.db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
+            factura_ref = self.firestore_db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
             factura_ref.update(updates)
             
             app_logger.info(f"Updated factura {factura_id} in empresa {empresa_id}")
@@ -323,7 +369,7 @@ class FirebaseHandler:
         Returns:
             List of factura dictionaries
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return []
         
@@ -332,7 +378,7 @@ class FirebaseHandler:
             
             if empresa_id:
                 # Get for specific empresa
-                facturas_ref = self.db.collection('facturas').document(empresa_id).collection('items')
+                facturas_ref = self.firestore_db.collection('facturas').document(empresa_id).collection('items')
                 facturas_docs = facturas_ref.where('revisada', '==', False).order_by('fecha_procesamiento', direction=firestore.Query.DESCENDING).stream()
                 
                 for doc in facturas_docs:
@@ -345,7 +391,7 @@ class FirebaseHandler:
                 
                 for empresa in empresas:
                     emp_id = empresa['id']
-                    facturas_ref = self.db.collection('facturas').document(emp_id).collection('items')
+                    facturas_ref = self.firestore_db.collection('facturas').document(emp_id).collection('items')
                     facturas_docs = facturas_ref.where('revisada', '==', False).stream()
                     
                     for doc in facturas_docs:
@@ -371,7 +417,7 @@ class FirebaseHandler:
         Returns:
             List of factura dictionaries
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return []
         
@@ -380,7 +426,7 @@ class FirebaseHandler:
             
             if empresa_id:
                 # Get for specific empresa
-                facturas_ref = self.db.collection('facturas').document(empresa_id).collection('items')
+                facturas_ref = self.firestore_db.collection('facturas').document(empresa_id).collection('items')
                 facturas_docs = facturas_ref.where('revisada', '==', True).where('exportada', '==', False).stream()
                 
                 for doc in facturas_docs:
@@ -393,7 +439,7 @@ class FirebaseHandler:
                 
                 for empresa in empresas:
                     emp_id = empresa['id']
-                    facturas_ref = self.db.collection('facturas').document(emp_id).collection('items')
+                    facturas_ref = self.firestore_db.collection('facturas').document(emp_id).collection('items')
                     # Note: Firestore doesn't support multiple inequality filters on different fields
                     # So we filter in Python
                     facturas_docs = facturas_ref.where('revisada', '==', True).stream()
@@ -423,16 +469,16 @@ class FirebaseHandler:
         Returns:
             True if deleted successfully
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return False
         
         try:
-            factura_ref = self.db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
+            factura_ref = self.firestore_db.collection('facturas').document(empresa_id).collection('items').document(factura_id)
             factura_ref.delete()
             
             # Update empresa total facturas
-            empresa_ref = self.db.collection('empresas').document(empresa_id)
+            empresa_ref = self.firestore_db.collection('empresas').document(empresa_id)
             empresa_ref.update({
                 'total_facturas': firestore.Increment(-1)
             })
@@ -451,7 +497,7 @@ class FirebaseHandler:
         Returns:
             List of factura dictionaries
         """
-        if not self.db:
+        if not self.firestore_db:
             app_logger.warning("Firebase not initialized")
             return []
         

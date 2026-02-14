@@ -4,73 +4,47 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual Environment
 venv/
 env/
 ENV/
-env.bak/
-venv.bak/
+
+# Credentials - NEVER commit
+credentials/
+*.json
+!requirements.txt
+!package*.json
+
+# Environment variables
+.env
+.env.local
+
+# Data directories
+data/temp/*
+data/processed/*
+data/exports/*
+!data/temp/.gitkeep
+!data/processed/.gitkeep
+!data/exports/.gitkeep
+
+# Logs
+logs/
+*.log
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.DS_Store
-
-# Environment Variables
-.env
-.env.local
-
-# Credentials
-*.json
-!firebase-example.json
-!google-cloud-example.json
-credentials/
-
-# Data
-data/temp/*
-!data/temp/.gitkeep
-data/exports/*
-!data/exports/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-*.jpg
-*.jpeg
-*.png
-*.heic
-
-# Logs
-*.log
-logs/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# Docker
-*.pyc
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Testing
+test_data/facturas_originales/*
+test_data/facturas_procesadas/*
+test_data/resultados/*
+!test_data/**/.gitkeep
+.pytest_cache/
+.coverage
+htmlcov/

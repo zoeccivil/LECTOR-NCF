@@ -21,48 +21,172 @@ Sistema de Lectura OCR de Facturas NCF desde WhatsApp para República Dominicana
 ✅ **Docker Ready**: Contenedorización completa  
 ✅ **Documentación Completa**: Guías de configuración paso a paso  
 
-## 🚀 Inicio Rápido
+## 🚀 Quick Setup (Local Development)
 
-### Prerrequisitos
-
-- Python 3.11 o superior
-- Cuenta de Google Cloud con Vision API habilitada
-- Cuenta de Twilio con WhatsApp Business API
-- Docker (opcional, para deployment)
-
-### Instalación
-
-1. **Clonar el repositorio**
+### 1. Clone repository
 ```bash
-git clone https://github.com/zoeccivil/LECTOR-NCF.git
-cd LECTOR-NCF
+git clone https://github.com/zoeccivil/lector-ncf.git
+cd lector-ncf
 ```
 
-2. **Crear entorno virtual**
+### 2. Create virtual environment
 ```bash
 python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
 ```
 
-3. **Instalar dependencias**
+### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **Configurar variables de entorno**
+### 4. Configure credentials (GUI)
 ```bash
-cp .env.example .env
-# Editar .env con tus credenciales
+python setup_credentials.py
 ```
 
-5. **Ejecutar la aplicación**
+This will:
+- ✅ Open file dialogs to select your credential JSON files
+- ✅ Copy them to `credentials/` directory
+- ✅ Generate `.env` file automatically
+- ✅ Validate your credentials
+
+### 5. Verify configuration
 ```bash
+python setup_credentials.py verify
+```
+
+### 6. Run application
+```bash
+# Development with auto-reload
+uvicorn app.main:app --reload
+
+# Production
 python -m app.main
-# O con uvicorn:
+```
+
+### 7. Open in browser
+```
+http://localhost:8000
+```
+
+## 📁 Credential Structure
+
+```
+lector-ncf/
+├── credentials/                    # ❌ Ignored by Git
+│   ├── firebase-credentials.json
+│   └── google-vision-credentials.json
+├── .env                            # ❌ Ignored by Git
+├── .gitignore                      # ✅ Protects credentials
+├── setup_credentials.py            # ✅ Local setup script
+└── setup_render_credentials.py    # ✅ Production setup script
+```
+
+## 🚀 Deploy to Render
+
+### Step 1: Prepare Credentials
+
+Run the GUI script:
+```bash
+python setup_render_credentials.py
+```
+
+This will:
+1. Let you select your credential JSON file
+2. Automatically convert to Base64
+3. Copy to clipboard
+4. Show step-by-step instructions
+
+### Step 2: Configure Render
+
+1. Go to https://dashboard.render.com
+2. Select service: **lector-ncf**
+3. Click **Environment** tab
+4. Add these variables:
+
+```
+FIREBASE_CREDENTIALS_BASE64=[paste Base64 from script]
+FIREBASE_DATABASE_URL=https://facot-app-default-rtdb.firebaseio.com/
+GREENAPI_INSTANCE_ID=your_instance_id
+GREENAPI_TOKEN=your_token
+WHATSAPP_MODE=dual
+```
+
+5. Click **Save Changes**
+6. Wait for automatic redeploy (~2 minutes)
+
+### Alternative: Manual Base64 Conversion
+
+**Mac/Linux:**
+```bash
+cat credentials/firebase-credentials.json | base64
+```
+
+**Windows PowerShell:**
+```powershell
+$content = Get-Content credentials/firebase-credentials.json -Raw
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($content))
+```
+
+## 🔒 Security
+
+- ✅ `.gitignore` protects `credentials/` directory and `.env` file
+- ✅ Credentials only exist locally on your machine
+- ✅ Production uses Base64 environment variables (not files)
+- ✅ No credentials are ever committed to Git
+- ✅ GitHub will block any accidental credential commits
+
+## 🧪 Testing & Verification
+
+### Verify credentials are configured
+```bash
+python setup_credentials.py verify
+```
+
+Should show:
+```
+✅ credentials/firebase-credentials.json
+✅ credentials/google-vision-credentials.json
+✅ .env
+```
+
+### Check Firebase connection
+```bash
+# Start app and check logs
 uvicorn app.main:app --reload
 ```
 
-La aplicación estará disponible en `http://localhost:8000`
+Should see:
+```
+✅ Using Firebase credentials from file
+Firebase Firestore initialized successfully
+```
+
+## 🆘 Troubleshooting
+
+### Credentials not found
+```bash
+# Reconfigure
+python setup_credentials.py
+```
+
+### Firebase disconnects after Render deploy
+- Make sure `FIREBASE_CREDENTIALS_BASE64` is set in Render environment variables
+- Check logs for "✅ Using Firebase credentials from Base64"
+
+### GUI scripts don't open
+- Ensure tkinter is installed: `python -m tkinter`
+- On Linux: `sudo apt-get install python3-tk`
+
+### Copy to clipboard fails
+- Manually copy the Base64 string from the text box
+- On Linux: install `xclip` or `xsel`
 
 ## 📊 Datos Extraídos
 
