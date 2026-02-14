@@ -76,23 +76,41 @@ async def process_greenapi_message(data: dict):
             if message_type == "imageMessage":
                 app_logger.info(f"Processing image from {from_number}")
                 
+                # AGREGAR: Log completo de messageData
+                app_logger.info(f"📋 messageData keys: {list(message_data.keys())}")
+                app_logger.info(f"📋 Full messageData: {json.dumps(message_data, indent=2)}")
+                
                 # Enviar confirmación
                 await unified_handler.send_confirmation(from_number)
                 
-                # Descargar imagen
-                download_url = message_data.get("downloadUrl")
+                # Descargar imagen - verificar múltiples campos posibles
+                download_url = (
+                    message_data.get("downloadUrl") or
+                    message_data.get("fileMessageData", {}).get("downloadUrl") or
+                    message_data.get("imageMessageData", {}).get("downloadUrl")
+                )
+                
+                app_logger.info(f"🔍 Extracted download_url: {download_url}")
+                
                 if not download_url:
-                    await unified_handler.send_error(from_number, "No se pudo descargar la imagen")
+                    app_logger.error("❌ downloadUrl not found in messageData")
+                    await unified_handler.send_error(from_number, "No se pudo obtener URL de descarga")
                     return
                 
-                app_logger.info(f"Download URL: {download_url}")
+                app_logger.info(f"⬇️ Downloading from: {download_url}")
                 
                 # Descargar
-                async with httpx.AsyncClient() as client:
-                    img_response = await client.get(download_url, timeout=30.0)
-                    image_bytes = img_response.content
-                
-                app_logger.info(f"Image downloaded: {len(image_bytes)} bytes")
+                try:
+                    async with httpx.AsyncClient() as client:
+                        img_response = await client.get(download_url, timeout=30.0)
+                        img_response.raise_for_status()
+                        image_bytes = img_response.content
+                    
+                    app_logger.info(f"✅ Image downloaded: {len(image_bytes)} bytes")
+                except Exception as e:
+                    app_logger.error(f"❌ Download failed: {e}")
+                    await unified_handler.send_error(from_number, f"Error descargando imagen: {str(e)}")
+                    return
                 
                 # Guardar temporalmente
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -102,15 +120,22 @@ async def process_greenapi_message(data: dict):
                 with open(temp_path, 'wb') as f:
                     f.write(image_bytes)
                 
+                app_logger.info(f"💾 Image saved to: {temp_path}")
+                
                 # Procesar con OCR
-                optimized_image = optimize_image_for_ocr(image_bytes)
-                ocr_text, confidence = ocr_processor.process_invoice_image(optimized_image)
-                
-                if not ocr_text:
-                    await unified_handler.send_error(from_number, "No se pudo leer texto en la imagen")
+                try:
+                    optimized_image = optimize_image_for_ocr(image_bytes)
+                    ocr_text, confidence = ocr_processor.process_invoice_image(optimized_image)
+                    
+                    if not ocr_text:
+                        await unified_handler.send_error(from_number, "No se pudo leer texto en la imagen")
+                        return
+                    
+                    app_logger.info(f"✅ OCR completed with confidence: {confidence}")
+                except Exception as e:
+                    app_logger.error(f"❌ OCR failed: {e}")
+                    await unified_handler.send_error(from_number, f"Error en OCR: {str(e)}")
                     return
-                
-                app_logger.info(f"OCR completed with confidence: {confidence}")
                 
                 # Parsear
                 invoice = ncf_parser.parse_invoice(ocr_text, confidence, image_filename)
@@ -128,8 +153,9 @@ async def process_greenapi_message(data: dict):
                 # Guardar en Firebase
                 try:
                     firebase_handler.save_invoice(invoice)
+                    app_logger.info("✅ Invoice saved to Firebase")
                 except Exception as e:
-                    app_logger.error(f"Firebase save failed: {e}")
+                    app_logger.error(f"❌ Firebase save failed: {e}")
                 
                 # Mover a procesados
                 processed_path = Path("data/processed") / image_filename
@@ -142,6 +168,8 @@ async def process_greenapi_message(data: dict):
                     await unified_handler.send_success(from_number, invoice.ncf, invoice.montos.total)
                 else:
                     await unified_handler.send_error(from_number)
+                
+                app_logger.info("✅ Image processing completed")
             
             elif message_type in ["textMessage", "extendedTextMessage"]:
                 # Mensaje de texto
@@ -149,7 +177,7 @@ async def process_greenapi_message(data: dict):
                 await unified_handler.send_message(from_number, "Por favor envía una foto de la factura. 📸")
         
     except Exception as e:
-        app_logger.error(f"Error processing Green-API message: {e}")
+        app_logger.error(f"❌ Error processing Green-API message: {e}")
         import traceback
         app_logger.error(traceback.format_exc())
 
