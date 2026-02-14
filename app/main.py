@@ -177,17 +177,21 @@ async def whatsapp_webhook(
     try:
         num_media = int(NumMedia)
         
+        # No media sent
         if num_media == 0:
             whatsapp_handler.send_message(From, "Por favor envía una foto de la factura. 📸")
             return Response(content="", status_code=200)
         
+        # Send confirmation message
         whatsapp_handler.send_confirmation(From)
         
+        # Download image
         image_bytes = await whatsapp_handler.download_media(MediaUrl0, settings.twilio_auth_token)
         if not image_bytes:
             whatsapp_handler.send_error(From, "No se pudo descargar la imagen")
             return Response(content="", status_code=200)
         
+        # Save temporary file
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         image_filename = f"factura_{timestamp}.jpg"
         temp_path = Path("data/temp") / image_filename
@@ -195,6 +199,7 @@ async def whatsapp_webhook(
         with open(temp_path, 'wb') as f:
             f.write(image_bytes)
         
+        # Process with OCR
         optimized_image = optimize_image_for_ocr(image_bytes)
         ocr_text, confidence = ocr_processor.process_invoice_image(optimized_image)
         
@@ -202,23 +207,30 @@ async def whatsapp_webhook(
             whatsapp_handler.send_error(From, "No se pudo leer texto en la imagen")
             return Response(content="", status_code=200)
         
+        # Parse invoice data
         invoice = ncf_parser.parse_invoice(ocr_text, confidence, image_filename)
         
+        # Check for warnings
         warnings = []
-        if not invoice.ncf: warnings.append("NCF no encontrado")
-        if not invoice.montos.total: warnings.append("Monto total no encontrado")
+        if not invoice.ncf: 
+            warnings.append("NCF no encontrado")
+        if not invoice.montos.total: 
+            warnings.append("Monto total no encontrado")
         
-        # Export and Save
+        # Export to CSV/JSON
         export_handler.export([invoice])
         
+        # Save to Firebase
         try:
             firebase_handler.save_invoice(invoice)
         except Exception as e:
             app_logger.error(f"Firebase save failed: {e}")
         
+        # Move to processed folder
         processed_path = Path("data/processed") / image_filename
         temp_path.rename(processed_path)
         
+        # Send response to user
         if warnings:
             whatsapp_handler.send_partial_success(From, warnings)
         elif invoice.ncf:
