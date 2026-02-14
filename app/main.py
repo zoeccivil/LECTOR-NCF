@@ -10,6 +10,9 @@ from pathlib import Path
 import os
 import shutil
 import json
+from app.greenapi_handler import greenapi_handler
+from app.unified_whatsapp_handler import unified_handler
+import httpx
 
 from app.utils.logger import app_logger
 from app.utils.config import settings
@@ -332,16 +335,16 @@ async def whatsapp_webhook(
         
         # No media sent
         if num_media == 0:
-            whatsapp_handler.send_message(From, "Por favor envía una foto de la factura. 📸")
+            await unified_handler.send_message(From, "Por favor envía una foto de la factura. 📸")
             return Response(content="", status_code=200)
         
         # Send confirmation message
-        whatsapp_handler.send_confirmation(From)
+        await unified_handler.send_confirmation(From)
         
         # Download image
         image_bytes = await whatsapp_handler.download_media(MediaUrl0, settings.twilio_auth_token)
         if not image_bytes:
-            whatsapp_handler.send_error(From, "No se pudo descargar la imagen")
+            await unified_handler.send_error(From, "No se pudo descargar la imagen")
             return Response(content="", status_code=200)
         
         # Save temporary file
@@ -357,7 +360,7 @@ async def whatsapp_webhook(
         ocr_text, confidence = ocr_processor.process_invoice_image(optimized_image)
         
         if not ocr_text:
-            whatsapp_handler.send_error(From, "No se pudo leer texto en la imagen")
+            await unified_handler.send_error(From, "No se pudo leer texto en la imagen")
             return Response(content="", status_code=200)
         
         # Parse invoice data
@@ -385,134 +388,136 @@ async def whatsapp_webhook(
         
         # Send response to user
         if warnings:
-            whatsapp_handler.send_partial_success(From, warnings)
+            await unified_handler.send_partial_success(From, warnings)
         elif invoice.ncf:
-            whatsapp_handler.send_success(From, invoice.ncf, invoice.montos.total)
+            await unified_handler.send_success(From, invoice.ncf, invoice.montos.total)
         else:
-            whatsapp_handler.send_error(From)
+            await unified_handler.send_error(From)
         
         return Response(content="", status_code=200)
         
     except Exception as e:
         app_logger.error(f"Error processing message: {e}")
         try:
-            whatsapp_handler.send_error(From, "Error interno del sistema")
+            await unified_handler.send_error(From, "Error interno del sistema")
         except:
             pass
         return Response(content="", status_code=200)
 
 
 
-    # ==========================================
-    # GREEN-API WEBHOOK
-    # ==========================================
+# ==========================================
+# GREEN-API WEBHOOK
+# ==========================================
 
-    @app.post("/webhook/greenapi")
-    async def greenapi_webhook(request: Request):
-        """Green-API webhook endpoint for receiving messages"""
+@app.post("/webhook/greenapi")
+async def greenapi_webhook(request: Request):
+    """Green-API webhook endpoint for receiving messages"""
+    
+    if not check_firebase_credentials():
+        app_logger.error("Message received but Firebase is not configured.")
+        return Response(content="", status_code=200)
+    
+    try:
+        data = await request.json()
+        app_logger.info("=" * 70)
+        app_logger.info("📥 GREEN-API WEBHOOK")
+        app_logger.info(f"Data: {data}")
+        app_logger.info("=" * 70)
         
-        try:
-            data = await request.json()
-            app_logger.info(f"Received Green-API webhook: {data}")
+        type_webhook = data.get("typeWebhook")
+        
+        if type_webhook == "incomingMessageReceived":
+            message_data = data.get("messageData", {})
+            sender_data = data.get("senderData", {})
             
-            # Green-API envía diferentes tipos de notificaciones
-            type_webhook = data.get("typeWebhook")
+            # Obtener datos
+            chat_id = sender_data.get("chatId", "")  # 18293757344@c.us
+            message_type = message_data.get("typeMessage", "")
             
-            if type_webhook == "incomingMessageReceived":
-                message_data = data.get("messageData", {})
-                
-                # Obtener datos del mensaje
-                chat_id = message_data.get("chatId")  # 18293757344@c.us
-                message_type = message_data.get("typeMessage")
-                
-                # Extraer número de teléfono
-                phone = chat_id.split("@")[0]
-                from_number = f"whatsapp:+{phone}"
-                
-                # Si es imagen
-                if message_type == "imageMessage":
-                    app_logger.info(f"Processing image from {from_number}")
-                    
-                    # Enviar confirmación
-                    await greenapi_handler.send_message(
-                        from_number, 
-                        "✅ Factura recibida, procesando... ⏳"
-                    )
-                    
-                    # Descargar imagen
-                    download_url = message_data.get("downloadUrl")
-                    if not download_url:
-                        await greenapi_handler.send_error(from_number, "No se pudo descargar la imagen")
-                        return Response(content="", status_code=200)
-                    
-                    # Descargar imagen
-                    async with httpx.AsyncClient() as client:
-                        img_response = await client.get(download_url)
-                        image_bytes = img_response.content
-                    
-                    # Guardar temporalmente
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    image_filename = f"factura_{timestamp}.jpg"
-                    temp_path = Path("data/temp") / image_filename
-                    
-                    with open(temp_path, 'wb') as f:
-                        f.write(image_bytes)
-                    
-                    # Procesar con OCR
-                    optimized_image = optimize_image_for_ocr(image_bytes)
-                    ocr_text, confidence = ocr_processor.process_invoice_image(optimized_image)
-                    
-                    if not ocr_text:
-                        await greenapi_handler.send_error(from_number, "No se pudo leer texto en la imagen")
-                        return Response(content="", status_code=200)
-                    
-                    # Parsear factura
-                    invoice = ncf_parser.parse_invoice(ocr_text, confidence, image_filename)
-                    
-                    # Verificar warnings
-                    warnings = []
-                    if not invoice.ncf: 
-                        warnings.append("NCF no encontrado")
-                    if not invoice.montos.total: 
-                        warnings.append("Monto total no encontrado")
-                    
-                    # Exportar
-                    export_handler.export([invoice])
-                    
-                    # Guardar en Firebase
-                    try:
-                        firebase_handler.save_invoice(invoice)
-                    except Exception as e:
-                        app_logger.error(f"Firebase save failed: {e}")
-                    
-                    # Mover a procesados
-                    processed_path = Path("data/processed") / image_filename
-                    temp_path.rename(processed_path)
-                    
-                    # Enviar respuesta
-                    if warnings:
-                        await greenapi_handler.send_partial_success(from_number, warnings)
-                    elif invoice.ncf:
-                        await greenapi_handler.send_success(from_number, invoice.ncf, invoice.montos.total)
-                    else:
-                        await greenapi_handler.send_error(from_number)
-                
-                elif message_type == "textMessage":
-                    # Mensaje de texto
-                    text = message_data.get("textMessageData", {}).get("textMessage", "")
-                    app_logger.info(f"Text message from {from_number}: {text}")
-                    
-                    await greenapi_handler.send_message(
-                        from_number,
-                        "Por favor envía una foto de la factura. 📸"
-                    )
+            # Extraer número
+            phone = chat_id.split("@")[0]
+            from_number = f"whatsapp:+{phone}"
             
-            return Response(content="", status_code=200)
+            app_logger.info(f"From: {from_number}, Type: {message_type}")
             
-        except Exception as e:
-            app_logger.error(f"Error processing Green-API webhook: {e}")
-            return Response(content="", status_code=200)
-
+            # Si es imagen
+            if message_type == "imageMessage":
+                app_logger.info(f"Processing image from {from_number}")
+                
+                # Enviar confirmación
+                await unified_handler.send_confirmation(from_number)
+                
+                # Descargar imagen
+                download_url = message_data.get("downloadUrl")
+                if not download_url:
+                    await unified_handler.send_error(from_number, "No se pudo descargar la imagen")
+                    return Response(content="", status_code=200)
+                
+                # Descargar
+                async with httpx.AsyncClient() as client:
+                    img_response = await client.get(download_url, timeout=30.0)
+                    image_bytes = img_response.content
+                
+                # Guardar temporalmente
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                image_filename = f"factura_{timestamp}.jpg"
+                temp_path = Path("data/temp") / image_filename
+                
+                with open(temp_path, 'wb') as f:
+                    f.write(image_bytes)
+                
+                # Procesar con OCR
+                optimized_image = optimize_image_for_ocr(image_bytes)
+                ocr_text, confidence = ocr_processor.process_invoice_image(optimized_image)
+                
+                if not ocr_text:
+                    await unified_handler.send_error(from_number, "No se pudo leer texto en la imagen")
+                    return Response(content="", status_code=200)
+                
+                # Parsear
+                invoice = ncf_parser.parse_invoice(ocr_text, confidence, image_filename)
+                
+                # Verificar warnings
+                warnings = []
+                if not invoice.ncf: 
+                    warnings.append("NCF no encontrado")
+                if not invoice.montos.total: 
+                    warnings.append("Monto total no encontrado")
+                
+                # Exportar
+                export_handler.export([invoice])
+                
+                # Guardar en Firebase
+                try:
+                    firebase_handler.save_invoice(invoice)
+                except Exception as e:
+                    app_logger.error(f"Firebase save failed: {e}")
+                
+                # Mover a procesados
+                processed_path = Path("data/processed") / image_filename
+                temp_path.rename(processed_path)
+                
+                # Enviar respuesta
+                if warnings:
+                    await unified_handler.send_partial_success(from_number, warnings)
+                elif invoice.ncf:
+                    await unified_handler.send_success(from_number, invoice.ncf, invoice.montos.total)
+                else:
+                    await unified_handler.send_error(from_number)
+            
+            elif message_type in ["textMessage", "extendedTextMessage"]:
+                # Mensaje de texto
+                app_logger.info(f"Text message from {from_number}")
+                await unified_handler.send_message(from_number, "Por favor envía una foto de la factura. 📸")
+        
+        return Response(content="", status_code=200)
+        
+    except Exception as e:
+        app_logger.error(f"Error processing Green-API webhook: {e}")
+        import traceback
+        app_logger.error(traceback.format_exc())
+        return Response(content="", status_code=200)
 
 # ==========================================
 # STATUS WEBHOOK
