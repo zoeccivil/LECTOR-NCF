@@ -10,6 +10,7 @@ ENV/
 
 # Credentials - NEVER commit
 credentials/
+!credentials/.gitkeep
 *.json
 !requirements.txt
 !package*.json
@@ -28,6 +29,7 @@ data/exports/*
 
 # Logs
 logs/
+!logs/.gitkeep
 *.log
 
 # IDE
