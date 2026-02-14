@@ -1,0 +1,22 @@
+{
+  "firebase": {
+    "credentials_path": "D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/firebase-credentials.json",
+    "project_id": "facot-app",
+    "database_url": "https://facot-app-default-rtdb.firebaseio.com/",
+    "storage_bucket": "facot-app.appspot.com"
+  },
+  "google_cloud": {
+    "credentials_path": "D:/Dropbox/PROGAIN/PROGAIN_CREDENTIALS/lector-ncf-cloud_credentials.json"
+  },
+  "twilio": {
+    "account_sid": "ACcce41a5f483e545f2f24ed71cc93b64a",
+    "auth_token": "fe7ddc0ef5be629843b835c8af71bbc2",
+    "whatsapp_number": "+18035909613"
+  },
+  "app": {
+    "data_folder": "./data",
+    "export_folder": "./data/exports",
+    "temp_folder": "./data/temp"
+  },
+  "last_updated": "2026-02-12T01:27:17.372324"
+}
