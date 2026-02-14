@@ -38,15 +38,18 @@ class FirebaseHandler:
                         creds_dict = json.loads(creds_json)
                         
                         # Create temporary file
-                        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                            json.dump(creds_dict, f)
-                            temp_cred_path = f.name
-                        
-                        cred = credentials.Certificate(temp_cred_path)
-                        app_logger.info("✅ Using Firebase credentials from Base64 environment variable")
-                        
-                        # Clean up temp file
-                        os.unlink(temp_cred_path)
+                        temp_cred_path = None
+                        try:
+                            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                                json.dump(creds_dict, f)
+                                temp_cred_path = f.name
+                            
+                            cred = credentials.Certificate(temp_cred_path)
+                            app_logger.info("✅ Using Firebase credentials from Base64 environment variable")
+                        finally:
+                            # Clean up temp file
+                            if temp_cred_path and os.path.exists(temp_cred_path):
+                                os.unlink(temp_cred_path)
                     except Exception as e:
                         app_logger.error(f"Failed to decode Base64 credentials: {e}")
                 

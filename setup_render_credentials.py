@@ -261,9 +261,9 @@ class RenderCredentialSetup:
                 "Please manually select and copy the text from the box above."
             )
     
-    def show_status(self, message: str, color: str):
-        """Show status message"""
-        # You could add a status label for this
+    def show_status(self, message: str, color: str = "black"):
+        """Show status message (currently prints to console, could be extended to GUI)"""
+        # For now, just print. Future enhancement: add status label to GUI
         print(message)
     
     def reset(self):
