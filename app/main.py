@@ -402,6 +402,118 @@ async def whatsapp_webhook(
         return Response(content="", status_code=200)
 
 
+
+    # ==========================================
+    # GREEN-API WEBHOOK
+    # ==========================================
+
+    @app.post("/webhook/greenapi")
+    async def greenapi_webhook(request: Request):
+        """Green-API webhook endpoint for receiving messages"""
+        
+        try:
+            data = await request.json()
+            app_logger.info(f"Received Green-API webhook: {data}")
+            
+            # Green-API envía diferentes tipos de notificaciones
+            type_webhook = data.get("typeWebhook")
+            
+            if type_webhook == "incomingMessageReceived":
+                message_data = data.get("messageData", {})
+                
+                # Obtener datos del mensaje
+                chat_id = message_data.get("chatId")  # 18293757344@c.us
+                message_type = message_data.get("typeMessage")
+                
+                # Extraer número de teléfono
+                phone = chat_id.split("@")[0]
+                from_number = f"whatsapp:+{phone}"
+                
+                # Si es imagen
+                if message_type == "imageMessage":
+                    app_logger.info(f"Processing image from {from_number}")
+                    
+                    # Enviar confirmación
+                    await greenapi_handler.send_message(
+                        from_number, 
+                        "✅ Factura recibida, procesando... ⏳"
+                    )
+                    
+                    # Descargar imagen
+                    download_url = message_data.get("downloadUrl")
+                    if not download_url:
+                        await greenapi_handler.send_error(from_number, "No se pudo descargar la imagen")
+                        return Response(content="", status_code=200)
+                    
+                    # Descargar imagen
+                    async with httpx.AsyncClient() as client:
+                        img_response = await client.get(download_url)
+                        image_bytes = img_response.content
+                    
+                    # Guardar temporalmente
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    image_filename = f"factura_{timestamp}.jpg"
+                    temp_path = Path("data/temp") / image_filename
+                    
+                    with open(temp_path, 'wb') as f:
+                        f.write(image_bytes)
+                    
+                    # Procesar con OCR
+                    optimized_image = optimize_image_for_ocr(image_bytes)
+                    ocr_text, confidence = ocr_processor.process_invoice_image(optimized_image)
+                    
+                    if not ocr_text:
+                        await greenapi_handler.send_error(from_number, "No se pudo leer texto en la imagen")
+                        return Response(content="", status_code=200)
+                    
+                    # Parsear factura
+                    invoice = ncf_parser.parse_invoice(ocr_text, confidence, image_filename)
+                    
+                    # Verificar warnings
+                    warnings = []
+                    if not invoice.ncf: 
+                        warnings.append("NCF no encontrado")
+                    if not invoice.montos.total: 
+                        warnings.append("Monto total no encontrado")
+                    
+                    # Exportar
+                    export_handler.export([invoice])
+                    
+                    # Guardar en Firebase
+                    try:
+                        firebase_handler.save_invoice(invoice)
+                    except Exception as e:
+                        app_logger.error(f"Firebase save failed: {e}")
+                    
+                    # Mover a procesados
+                    processed_path = Path("data/processed") / image_filename
+                    temp_path.rename(processed_path)
+                    
+                    # Enviar respuesta
+                    if warnings:
+                        await greenapi_handler.send_partial_success(from_number, warnings)
+                    elif invoice.ncf:
+                        await greenapi_handler.send_success(from_number, invoice.ncf, invoice.montos.total)
+                    else:
+                        await greenapi_handler.send_error(from_number)
+                
+                elif message_type == "textMessage":
+                    # Mensaje de texto
+                    text = message_data.get("textMessageData", {}).get("textMessage", "")
+                    app_logger.info(f"Text message from {from_number}: {text}")
+                    
+                    await greenapi_handler.send_message(
+                        from_number,
+                        "Por favor envía una foto de la factura. 📸"
+                    )
+            
+            return Response(content="", status_code=200)
+            
+        except Exception as e:
+            app_logger.error(f"Error processing Green-API webhook: {e}")
+            return Response(content="", status_code=200)
+
+
 # ==========================================
 # STATUS WEBHOOK
 # ==========================================
